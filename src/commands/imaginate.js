@@ -26,9 +26,17 @@ module.exports = {
         .addStringOption(
             option => option.setName('prompt')
                 .setDescription('Prompt for your image.')
-                .setRequired(true)),
+                .setRequired(true))
+        .addIntegerOption(
+            option => option.setName('number')
+                .setDescription('Number of images to generate.')
+                .setRequired(false)
+                .setMinValue(1)
+                .setMaxValue(4)
+        ),
     async execute(interaction) {
         const prompt = interaction.options.getString('prompt');
+        const number = interaction.options.getInteger('number') || 1;
         const channelID = interaction.channelId.toString();
         const retrieveRow = db.readDataBy('id', channelID);
         let getCurrentImageModel;
@@ -63,9 +71,9 @@ module.exports = {
     
             // Send request to the API to receive OpenAI's response.
             const response = await openai.images.generate({
-                model: 'ass',
+                model: getCurrentImageModel,
                 prompt: prompt,
-                n: 2,
+                n: number,
                 size: imageSize.squareXS,
             }).catch((error) => console.error('OpenAI ERROR:\n', error));
             

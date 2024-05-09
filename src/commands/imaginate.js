@@ -40,6 +40,13 @@ module.exports = {
                 ephemeral: true
             });
         };
+        
+        const errorEmbed = (title, description) => {
+            return new EmbedBuilder()
+                .setTitle(title)
+                .setDescription(description)
+                .setColor(colors.failureColor);
+        };
 
         try {
             // Fetch OpenAI configuration.
@@ -56,7 +63,7 @@ module.exports = {
     
             // Send request to the API to receive OpenAI's response.
             const response = await openai.images.generate({
-                model: getCurrentImageModel,
+                model: 'ass',
                 prompt: prompt,
                 n: 2,
                 size: imageSize.squareXS,
@@ -67,7 +74,7 @@ module.exports = {
     
             // Error handling for no response.
             if (!response) {
-                interaction.editReply("I'm having some trouble with the OpenAI API. Try again in a moment.");
+                await interaction.editReply({ embeds: [errorEmbed(`Sorry!`, `${italic(`I'm having some trouble with the OpenAI API. Try again in a moment.`)}`)] });
                 return;
             };
     
@@ -103,13 +110,7 @@ module.exports = {
 
         } catch(error) {
             console.error(`ERROR:\n${error}\n`);
-
-            const errEmbed = new EmbedBuilder()
-                .setTitle('An error occurred')
-                .setDescription('```' + error + '```')
-                .setColor(0xe32424);
-      
-            interaction.editReply({ embeds: [errEmbed] });
+            await interaction.editReply({ embeds: [errorEmbed('Apologies, but unfortunately an error occurred:', '```' + error + '```')] });
         };
     },
 };

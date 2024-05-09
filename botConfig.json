@@ -1,0 +1,81 @@
+{
+    "OpenAIModels": {
+        "ChatModels": {
+            "GPT-4 Turbo": "gpt-4-turbo",
+            "GPT-4": "gpt-4",
+            "GPT-3.5 Turbo": "gpt-3.5-turbo"
+        },
+        
+        "ImageModels": {
+            "Dall·E 3": "dall-e-3",
+            "Dall·E 2": "dall-e-2"
+        }
+    },
+
+    "ImageSizes": {
+        "squareXS": "256x256",
+        "squareS": "512x512",
+        "squareM": "768x768",
+        "squareL": "1024x1024",
+        "horizontal": "1024x1792",
+        "tall": "1792x1024"
+    },
+
+    "commandEmojis": {
+        "currentEmoji": "🔹",
+        "chatEmoji": "💬",
+        "imageEmoji": "🖼️",
+        "personaEmoji": "💽"
+    },
+
+    "PersonaModalsText": {
+        "modalPersona": {
+            "new": {
+                "customId": "newPersonaModal",
+                "title": "Add a New Persona"
+            },
+            "edit": {
+                "customId": "editPersonaModal",
+                "title": "Edit Current Persona"
+            },
+            "delete": {
+                "customId": "deletePersonaModal",
+                "title": "Delete Current Persona"
+            }
+        },
+        
+        "nameInput": {
+            "new": {
+                "label": "Give your persona a name."
+            },
+            "edit": {
+                "label": "Edit your persona's name."
+            },
+            "delete": {
+                "label": "Persona Name (DO NOT EDIT | READONLY):"
+            }
+        },
+
+        "descriptionInput": {
+            "new": {
+                "label": "Describe this persona's details."
+            },
+            "edit": {
+                "label": "Edit your persona's description."
+            },
+            "delete": {
+                "label": "Persona Description (DO NOT EDIT | READONLY):"
+            }
+        },
+
+        "placeholderText": {
+            "name": "Chef",
+            "description": "You are the #1 ranked chef in the culinary world and my personal culinary advisor..."
+        },
+
+        "deleteMsg": {
+            "label": "Are you sure you wish to delete this persona?",
+            "placeholder": "'Yes' / 'No'"
+        }
+    }
+}

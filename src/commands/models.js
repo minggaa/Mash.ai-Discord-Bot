@@ -80,7 +80,7 @@ module.exports = {
         fetchModelType();
 
         const getModelKey = (curModel, modelsType) => {
-            modelsType = modelsType ? modelsType : getModelsType;
+            modelsType = modelsType || getModelsType;
             return Object.keys(modelsType).find(key => modelsType[key] === curModel.toString());
         };
 
@@ -207,7 +207,7 @@ module.exports = {
         function updateReply(state, contentMessage, curModel) {
             fetchModelType();
             // Check if component consists of an interaction, if yes then update menu to latest selection.
-            let checkCurModel = curModel ? curModel : getCurrentModel;
+            let checkCurModel = curModel || getCurrentModel;
 
             // To update the select menu with user's selection.
             const newSelectMenu = selectModelMenu(checkCurModel);

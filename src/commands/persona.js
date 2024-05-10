@@ -169,7 +169,7 @@ module.exports = {
         function updateReply(state, contentMessage, curPersona, isUpdateValid) {
             fetchPersonaData();
             // Check if component consists of an interaction, if yes then update menu to latest selection.
-            let checkCurPersona = curPersona ? curPersona : getCurrentPersona;
+            let checkCurPersona = curPersona || getCurrentPersona;
 
             // To update the select menu with user's selection.
             const newSelectMenu = selectPersonaMenu(checkCurPersona);
@@ -335,7 +335,7 @@ module.exports = {
                             let color;
                             
                             if (replyType === 1) {
-                                color = setColor ? setColor : colors.successColor;
+                                color = setColor || colors.successColor;
                                 return modalInteraction.reply({ 
                                     embeds: [
                                         embedFeedback
@@ -345,7 +345,7 @@ module.exports = {
                                     ]
                                 });
                             } else if (replyType === 2) {
-                                color = setColor ? setColor : colors.failureColor;
+                                color = setColor || colors.failureColor;
                                 return modalInteraction.reply({
                                     embeds: [embedFeedback.setTitle(setTitle).setColor(color)]
                                 });

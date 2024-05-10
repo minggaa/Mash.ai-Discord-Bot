@@ -49,7 +49,13 @@ module.exports = {
             });
         };
         
+        const errorLog = [];
         const errorEmbed = (title, description) => {
+            const splitErrorLog = errorLog.join('\n\n')
+            const errorPrinting = splitErrorLog ? '```' + splitErrorLog + '```' : '';
+            title = title || 'Sorry! We\'ve encountered some error(s).';
+            description = description ? description + '\n' + errorPrinting : errorPrinting;
+
             return new EmbedBuilder()
                 .setTitle(title)
                 .setDescription(description)
@@ -71,18 +77,22 @@ module.exports = {
     
             // Send request to the API to receive OpenAI's response.
             const response = await openai.images.generate({
-                model: getCurrentImageModel,
+                model: 'boogie',
                 prompt: prompt,
                 n: number,
                 size: imageSize.squareXS,
-            }).catch((error) => console.error('OpenAI ERROR:\n', error));
+            }).catch(async (error) => {
+                console.error('OpenAI ERROR:\n', error);
+                errorLog.push(error);
+                await interaction.editReply({ embeds: [errorEmbed(errorLog, null, `${italic(`I'm having some trouble with the OpenAI API. Try again in a moment.`)}`)] });
+            });
             
             const imageUrl = response.data;
             console.log(imageUrl);
     
             // Error handling for no response.
             if (!response) {
-                await interaction.editReply({ embeds: [errorEmbed(`Sorry!`, `${italic(`I'm having some trouble with the OpenAI API. Try again in a moment.`)}`)] });
+                await interaction.editReply({ embeds: [errorEmbed(errorLog, null, `${italic(`I'm having some trouble with the OpenAI API. Try again in a moment.`)}`)] });
                 return;
             };
     
@@ -118,7 +128,8 @@ module.exports = {
 
         } catch(error) {
             console.error(`ERROR:\n${error}\n`);
-            await interaction.editReply({ embeds: [errorEmbed('Apologies, but unfortunately an error occurred:', '```' + error + '```')] });
+            errorLog.push(error);
+            await interaction.editReply({ embeds: [errorEmbed(errorLog)] });
         };
     },
 };

@@ -18,6 +18,13 @@ const colors = bot.colors;
 const config = require('../../botConfig.json');
 const modelsOpAI = config.OpenAIModels;
 const imageSize = config.ImageSizes;
+    
+const data = [
+    { url: 'https://cdn.britannica.com/70/234870-050-D4D024BB/Orange-colored-cat-yawns-displaying-teeth.jpg', },
+    { url: 'https://cdn.britannica.com/34/235834-050-C5843610/two-different-breeds-of-cats-side-by-side-outdoors-in-the-garden.jpg', },
+    { url: 'https://cdn.britannica.com/16/218316-050-7C53C22A/European-wildcat-Felis-silvestris-prey.jpg', },
+    { url: 'https://cdn.britannica.com/39/226539-050-D21D7721/Portrait-of-a-cat-with-whiskers-visible.jpg', },
+];
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -51,7 +58,7 @@ module.exports = {
         
         const errorLog = [];
         const errorEmbed = (title, description) => {
-            const splitErrorLog = errorLog.join('\n\n')
+            const splitErrorLog = errorLog ? errorLog.join('\n\n') : '';
             const errorPrinting = splitErrorLog ? '```' + splitErrorLog + '```' : '';
             title = title || 'Sorry! We\'ve encountered some error(s).';
             description = description ? description + '\n' + errorPrinting : errorPrinting;
@@ -66,6 +73,7 @@ module.exports = {
             // Fetch OpenAI configuration.
             const openai = bot.openai;
     
+            // Fetches the latest state of current image model.
             function fetchCurrentImageModel() {
                 getCurrentImageModel = db.readDataBy('id', channelID).currentImageModel;
                 return getCurrentImageModel;
@@ -73,35 +81,29 @@ module.exports = {
     
             fetchCurrentImageModel();
             
+            // Defer reply to allow time for the API to send response.
             await interaction.deferReply();
     
             // Send request to the API to receive OpenAI's response.
             const response = await openai.images.generate({
-                model: 'boogie',
+                model: getCurrentImageModel,
                 prompt: prompt,
                 n: number,
                 size: imageSize.squareXS,
             }).catch(async (error) => {
                 console.error('OpenAI ERROR:\n', error);
                 errorLog.push(error);
-                await interaction.editReply({ embeds: [errorEmbed(errorLog, null, `${italic(`I'm having some trouble with the OpenAI API. Try again in a moment.`)}`)] });
+                await interaction.editReply({ embeds: [errorEmbed(null, `${italic(`I'm having some trouble with the OpenAI API. Try again in a moment.`)}`)] });
             });
-            
-            const imageUrl = response.data;
-            console.log(imageUrl);
     
             // Error handling for no response.
             if (!response) {
-                await interaction.editReply({ embeds: [errorEmbed(errorLog, null, `${italic(`I'm having some trouble with the OpenAI API. Try again in a moment.`)}`)] });
+                await interaction.editReply({ embeds: [errorEmbed(null, `${italic(`I'm having some trouble with the OpenAI API. Try again in a moment.`)}`)] });
                 return;
             };
-    
-            const data = [
-                { url: 'https://cdn.britannica.com/70/234870-050-D4D024BB/Orange-colored-cat-yawns-displaying-teeth.jpg', },
-                { url: 'https://cdn.britannica.com/34/235834-050-C5843610/two-different-breeds-of-cats-side-by-side-outdoors-in-the-garden.jpg', },
-                { url: 'https://cdn.britannica.com/16/218316-050-7C53C22A/European-wildcat-Felis-silvestris-prey.jpg', },
-                { url: 'https://cdn.britannica.com/39/226539-050-D21D7721/Portrait-of-a-cat-with-whiskers-visible.jpg', },
-            ];
+            
+            const imageUrl = response.data;
+            console.log(imageUrl);
     
             // To get the generated image response(s) and display as embed.
             const getResponses = (data) => {

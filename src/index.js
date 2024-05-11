@@ -154,5 +154,5 @@ try {
     client.login(process.env.CLIENT_TOKEN);
 
 } catch (error) {
-    console.error(`\nERROR: ${error}\n`);
+    console.error(error);
 };

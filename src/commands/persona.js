@@ -24,6 +24,7 @@ const pModal = config.PersonaModalsText;
 // Define constants.
 const defaultPersona = 'Default';
 const personaEmoji = emojis.personaEmoji;
+const currentEmoji = emojis.currentEmoji;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -123,7 +124,7 @@ module.exports = {
         const embedView = (embedFields, curModel) => {
             return new EmbedBuilder({
                 title: `${personaEmoji} Bot-GPT Personas in '#${interaction.channel.name}'`,
-                description: `:small_blue_diamond: ${bold('Current Persona:')} ${italic(curModel)}`,
+                description: `${currentEmoji} ${bold('Current Persona:')} ${italic(curModel)}`,
                 fields: embedFields,
                 timestamp: new Date().toISOString(),
             }).setColor(colors.botColor).addFields({ name: '\n', value: '\t' });
@@ -211,13 +212,13 @@ module.exports = {
             if (interaction.isButton()) {
                 switch (interaction.customId) {
                     case "newPersona":
-                        await personaOpsHandler('new', `newPersonaModal_${interaction.id}`);
+                        await personaOpsHandler('new', `newPersonaModal-${interaction.id}`);
                         break;
                     case "editPersona":
-                        await personaOpsHandler('edit', `editPersonaModal_${interaction.id}`);
+                        await personaOpsHandler('edit', `editPersonaModal-${interaction.id}`);
                         break;
                     case "deletePersona":
-                        await personaOpsHandler('delete', `deletePersonaModal_${interaction.id}`);
+                        await personaOpsHandler('delete', `deletePersonaModal-${interaction.id}`);
                         break;
                     default:
                         console.log(`Unhandled button customId ${interaction.customId}`);
@@ -256,7 +257,7 @@ module.exports = {
                 // Handle modal builder based on interaction type.
                 try {
                     const personaModal = new ModalBuilder({
-                        customId: `${pModal.modalPersona[interactionType].customId}_${interaction.id}`,
+                        customId: `${pModal.modalPersona[interactionType].customId}-${interaction.id}`,
                         title: pModal.modalPersona[interactionType].title
                     });
 
@@ -320,7 +321,7 @@ module.exports = {
                         const embedReply = (replyType, setTitle, setDescription, setColor) => {
                             const defDescription = `${bold('Name:')} ${italic(personaNameValue)}\n${bold('Description:')} ${italic(personaDescriptionValue)}`;
                             const checkDescription = setDescription === 'default' ? defDescription : setDescription;
-                            const description = modalId === `deletePersonaModal_${interaction.id}` ? strikethrough(checkDescription) : checkDescription;
+                            const description = modalId === `deletePersonaModal-${interaction.id}` ? strikethrough(checkDescription) : checkDescription;
                             let color;
                             
                             if (replyType === 1) {
@@ -341,7 +342,7 @@ module.exports = {
                             };
                         };
                         
-                        if (modalId === `newPersonaModal_${interaction.id}`) {
+                        if (modalId === `newPersonaModal-${interaction.id}`) {
                             const addNewStmt = db.editPersona('insert', channelID, personaNameValue, personaDescriptionValue);
 
                             if (addNewStmt === true) {
@@ -352,7 +353,7 @@ module.exports = {
                             return updateReply('update');
                         };
 
-                        if (modalId === `editPersonaModal_${interaction.id}`) {
+                        if (modalId === `editPersonaModal-${interaction.id}`) {
                             const editStmt = db.editPersona('update', channelID, getCurrentPersona, channelPersonas[getCurrentPersona], personaNameValue, personaDescriptionValue);
                             
                             if (editStmt === true) {
@@ -363,7 +364,7 @@ module.exports = {
                             return updateReply('update', null, personaNameValue, editStmt);
                         };
                         
-                        if (modalId === `deletePersonaModal_${interaction.id}`) {
+                        if (modalId === `deletePersonaModal-${interaction.id}`) {
                             const deletePersonaValue = modalInteraction.fields.getTextInputValue('deletePersonaInput').toLowerCase();
                             const yesInputs = ['Yes', 'yes', 'ye', 'y', '1'];
                             const noInputs = ['No', 'no', 'n', '0'];
@@ -387,13 +388,13 @@ module.exports = {
                     .catch((error) => {
                         let modalType;
                         switch (modalId) {
-                            case `newPersonaModal_${interaction.id}`:
+                            case `newPersonaModal-${interaction.id}`:
                                 modalType = 'New Persona';
                                 break;
-                            case `editPersonaModal_${interaction.id}`:
+                            case `editPersonaModal-${interaction.id}`:
                                 modalType = 'Edit Persona';
                                 break;
-                            case `deletePersonaModal_${interaction.id}`:
+                            case `deletePersonaModal-${interaction.id}`:
                                 modalType = 'Delete Persona';
                                 break;
                             default:

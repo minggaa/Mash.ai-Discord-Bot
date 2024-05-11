@@ -25,7 +25,10 @@
         "currentEmoji": "🔹",
         "chatEmoji": "💬",
         "imageEmoji": "🖼️",
-        "personaEmoji": "💽"
+        "personaEmoji": "💽",
+        "repeatEmoji": "🔄",
+        "lowVarEmoji": "🎇",
+        "highVarEmoji": "🎆"
     },
 
     "PersonaModalsText": {

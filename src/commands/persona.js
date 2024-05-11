@@ -66,20 +66,9 @@ module.exports = {
         };
 
         // Buttons declaration.
-        const newPersona = new ButtonBuilder()
-            .setCustomId('newPersona')
-            .setLabel('New Persona')
-            .setStyle(ButtonStyle.Success);
-
-        const editPersona = new ButtonBuilder()
-            .setCustomId('editPersona')
-            .setLabel('Edit Persona')
-            .setStyle(ButtonStyle.Secondary);
-
-        const deletePersona = new ButtonBuilder()
-            .setCustomId('deletePersona')
-            .setLabel('Delete Persona')
-            .setStyle(ButtonStyle.Danger);
+        const newPersona = bot.buttonBuilder('newPersona', `New Persona`, ButtonStyle.Success);
+        const editPersona = bot.buttonBuilder('editPersona', `Edit Persona`, ButtonStyle.Secondary);
+        const deletePersona = bot.buttonBuilder('deletePersona', `Delete Persona`, ButtonStyle.Danger);
 
         // Clean and set up the initial state for EMBED and SELECT MENU.
         function setInteraction(toClear) {

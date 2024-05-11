@@ -85,15 +85,8 @@ module.exports = {
         };
 
         // Buttons declaration.
-        const switchToChatModels = new ButtonBuilder()
-            .setCustomId('switchToChatModels')
-            .setLabel(`Switch to ${chatEmoji} Chat Models`)
-            .setStyle(ButtonStyle.Primary);
-        
-        const switchToImageModels = new ButtonBuilder()
-            .setCustomId('switchToImageModels')
-            .setLabel(`Switch to ${imageEmoji} Image Models`)
-            .setStyle(ButtonStyle.Primary);
+        const switchToChatModels = bot.buttonBuilder('switchToChatModels', `Switch to ${chatEmoji} Chat Models`, ButtonStyle.Primary);
+        const switchToImageModels = bot.buttonBuilder('switchToImageModels', `Switch to ${imageEmoji} Image Models`, ButtonStyle.Primary);
 
         const buttonDisplay = ()=> {
             if (type === 'chat') {

@@ -6,6 +6,8 @@ const {
     Collection,
     GatewayIntentBits,
     EmbedBuilder,
+    ButtonBuilder,
+    ButtonStyle,
     bold, italic, strikethrough } = require('discord.js');
 const { OpenAI } = require('openai');
 
@@ -47,9 +49,22 @@ function checkEnabled(channelID) {
     };
 };
 
+// Create button builder.
+const buttonBuilder = (customId, label, style, emoji) => {
+    const button = new ButtonBuilder()
+        .setCustomId(customId)
+        .setLabel(label)
+        .setStyle(style);
+
+    if (emoji) button.setEmoji(emoji);
+
+    return button;
+};
+
 module.exports = {
     client,
     openai,
     colors,
-    checkEnabled 
+    checkEnabled,
+    buttonBuilder,
 };

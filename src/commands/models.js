@@ -15,9 +15,9 @@ const colors = bot.colors;
 
 const config = require('../../botConfig.json');
 const emojis = config.commandEmojis;
-const modelsOpAI = config.GenerationModels;
-const chatModels = modelsOpAI.ChatModels;
-const imageModels = modelsOpAI.ImageModels;
+const models = config.GenerationModels;
+const chatModels = models.ChatModels;
+const imageModels = models.ImageModels;
 
 // Define constants.
 const chatEmoji = emojis.chatEmoji;

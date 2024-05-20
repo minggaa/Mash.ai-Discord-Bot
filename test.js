@@ -3,7 +3,7 @@ require('dotenv/config');
 const fs = require('fs');
 const db = require('./src/utils/database.js');
 const pModals = require('./botConfig.json').personaModalsText;
-const modelsOpAI = require('./botConfig.json').GenerationModels;
+const models = require('./botConfig.json').GenerationModels;
 
 // Persona data file config
 // const personaData = fs.readFileSync('persona.json');
@@ -140,7 +140,7 @@ function populateInteractions() {
 // console.log(`Previous val: ${previous}`);
 
 // console.log(pModals.modalPersona.new.customId);
-// console.log(modelsOpAI.gpt4T);
+// console.log(models.gpt4T);
 
 function penis() {
     const print = [];

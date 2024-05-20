@@ -10,9 +10,9 @@ const bot = require('./utils/bot.js');
 const conversation = require('../src/utils/conversation.js');
 
 const config = require('../botConfig.json');
-const modelsOpAI = config.GenerationModels;
-const chatModels = modelsOpAI.ChatModels;
-const imageModels = modelsOpAI.ImageModels;
+const models = config.GenerationModels;
+const chatModels = models.ChatModels;
+const imageModels = models.ImageModels;
 
 try {
     // Fetch instance declarations and configurations.

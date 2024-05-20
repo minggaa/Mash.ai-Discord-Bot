@@ -1,8 +1,8 @@
 // Importing necessary classes and files.
 const Database = require('better-sqlite3');
-const modelsOpAI = require('../../botConfig.json').GenerationModels;
-const chatModel = modelsOpAI.ChatModels;
-const imageModel = modelsOpAI.ImageModels;
+const models = require('../../botConfig.json').GenerationModels;
+const chatModel = models.ChatModels;
+const imageModel = models.ImageModels;
 
 // Connect to the database.
 const db = new Database('botgpt.db');

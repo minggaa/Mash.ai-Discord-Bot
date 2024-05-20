@@ -10,23 +10,16 @@ const {
     ButtonStyle,
     bold, italic, strikethrough } = require('discord.js');
 const { OpenAI } = require('openai');
-const { default: Replicate } = await import('replicate');
 
 const db = require('./database.js');
 const config = require('../../botConfig.json');
 
-
 // Create new Client instance.
 const client = new Client({ intents: ['Guilds', 'GuildMembers', 'GuildMessages', 'MessageContent'] });
 
-// Configure and set up the OpenAI API client.
+// Configure OpenAI key to send API requests.
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_KEY, 
-});
-
-// Configure and set up the Replicate API client.
-const replicate = new Replicate({
-    auth: process.env.REPLICATE_API_KEY,
 });
 
 // Bot's colors.
@@ -71,7 +64,6 @@ const buttonBuilder = (customId, label, style, emoji) => {
 module.exports = {
     client,
     openai,
-    replicate,
     colors,
     checkEnabled,
     buttonBuilder,

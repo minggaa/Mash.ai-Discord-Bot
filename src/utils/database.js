@@ -1,6 +1,6 @@
 // Importing necessary classes and files.
 const Database = require('better-sqlite3');
-const modelsOpAI = require('../../botConfig.json').OpenAIModels;
+const modelsOpAI = require('../../botConfig.json').GenerationModels;
 const chatModel = modelsOpAI.ChatModels;
 const imageModel = modelsOpAI.ImageModels;
 

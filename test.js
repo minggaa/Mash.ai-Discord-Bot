@@ -3,7 +3,7 @@ require('dotenv/config');
 const fs = require('fs');
 const db = require('./src/utils/database.js');
 const pModals = require('./botConfig.json').personaModalsText;
-const modelsOpAI = require('./botConfig.json').OpenAIModels;
+const modelsOpAI = require('./botConfig.json').GenerationModels;
 
 // Persona data file config
 // const personaData = fs.readFileSync('persona.json');

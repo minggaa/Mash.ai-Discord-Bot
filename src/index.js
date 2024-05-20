@@ -10,7 +10,7 @@ const bot = require('./utils/bot.js');
 const conversation = require('../src/utils/conversation.js');
 
 const config = require('../botConfig.json');
-const modelsOpAI = config.OpenAIModels;
+const modelsOpAI = config.GenerationModels;
 const chatModels = modelsOpAI.ChatModels;
 const imageModels = modelsOpAI.ImageModels;
 

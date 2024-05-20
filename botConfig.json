@@ -1,5 +1,5 @@
 {
-    "OpenAIModels": {
+    "GenerationModels": {
         "ChatModels": {
             "GPT-4 Turbo": "gpt-4-turbo",
             "GPT-4": "gpt-4",
@@ -8,7 +8,13 @@
         
         "ImageModels": {
             "Dall·E 3": "dall-e-3",
-            "Dall·E 2": "dall-e-2"
+            "Dall·E 2": "dall-e-2",
+            "Stable Diffusion": "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4",
+            "DreamShaper": "lucataco/dreamshaper-xl-turbo:0a1710e0187b01a255302738ca0158ff02a22f4638679533e111082f9dd1b615"
+        },
+        
+        "Upscaler": {
+            "real-esrgan": "nightmareai/real-esrgan:350d32041630ffbe63c8352783a26d94126809164e54085352f8326e53999085"
         }
     },
 

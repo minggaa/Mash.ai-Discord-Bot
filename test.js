@@ -2,8 +2,11 @@
 require('dotenv/config');
 const fs = require('fs');
 const db = require('./src/utils/database.js');
-const pModals = require('./botConfig.json').personaModalsText;
-const models = require('./botConfig.json').GenerationModels;
+
+const config = require('./botConfig.json');
+const pModals = config.personaModalsText;
+const models = config.GenerationModels;
+const imageSize = config.ImageSizes;
 
 // Persona data file config
 // const personaData = fs.readFileSync('persona.json');
@@ -150,4 +153,12 @@ function penis() {
     return console.log(print);
 };
 
-penis('we pis 1', 'we pis 2', 'we pis 3', 'we pis 4');
+// penis('we pis 1', 'we pis 2', 'we pis 3', 'we pis 4');
+
+const size = imageSize.tall;
+
+const sizeSplit = size.split('x');
+const width = sizeSplit[0];
+const height = sizeSplit[1];
+
+console.log(`Width: ${width}\nHeight: ${height}\n`);

@@ -3,3 +3,4 @@ Diagrams
 node_modules
 .eslintrc.json
 .env
+src/assets/variations/*

@@ -23,8 +23,12 @@
         "squareS": "512x512",
         "squareM": "768x768",
         "squareL": "1024x1024",
-        "horizontal": "1024x1792",
-        "tall": "1792x1024"
+        "tall": "1024x1792",
+        "horizontal": "1792x1024"
+    },
+
+    "NegativePrompt": {
+        "default": "nsfw, lowres, bad anatomy, bad hands, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry"
     },
 
     "commandEmojis": {

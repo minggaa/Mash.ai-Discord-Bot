@@ -61,10 +61,23 @@ const buttonBuilder = (customId, label, style, emoji) => {
     return button;
 };
 
+// Calculate time difference in ms.
+function startTimer(timeCreated) {
+    // Get the current time
+    const currentTime = new Date();
+
+    // Calculate the time difference
+    const timeDiff = currentTime - timeCreated;
+
+    // Print the timer
+    return `${timeDiff} ms`;
+};
+
 module.exports = {
     client,
     openai,
     colors,
     checkEnabled,
     buttonBuilder,
+    startTimer,
 };

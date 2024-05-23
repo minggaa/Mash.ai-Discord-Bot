@@ -9,7 +9,7 @@
         "ImageModels": {
             "Dall·E 3": "dall-e-3",
             "Dall·E 2": "dall-e-2",
-            "Stable Diffusion": "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4",
+            "Stable Diffusion": "stability-ai/sdxl:392573f9ac8c7f6153001c5ef00fc9fd6611ad361e3ead07160116747895d7ad",
             "DreamShaper": "lucataco/dreamshaper-xl-turbo:0a1710e0187b01a255302738ca0158ff02a22f4638679533e111082f9dd1b615"
         },
         
@@ -37,6 +37,9 @@
         "imageEmoji": "🖼️",
         "personaEmoji": "💽",
         "repeatEmoji": "🔄",
+        "repeatVarEmoji": "🔀",
+        "sparkleEmoji": "✨",
+        "wandEmoji": "🪄",
         "lowVarEmoji": "🎇",
         "highVarEmoji": "🎆"
     },

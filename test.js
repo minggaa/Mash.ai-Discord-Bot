@@ -155,10 +155,32 @@ function penis() {
 
 // penis('we pis 1', 'we pis 2', 'we pis 3', 'we pis 4');
 
-const size = imageSize.tall;
+const replicateInputJSON = {
+    width: 512,
+    height: 512,
+    prompt: 'cats',
+    negPrompt: '',
+    num_outputs: 1,
+    scheduler: "K_EULER",
+};
 
-const sizeSplit = size.split('x');
-const width = sizeSplit[0];
-const height = sizeSplit[1];
+const runReplicate = async(input, numImg) => {
+    numImg = numImg || 1;
+    input = input || replicateInputJSON;
+    isSingledOut = (numImg > 1) ? false : true;
 
-console.log(`Width: ${width}\nHeight: ${height}\n`);
+    if (input === replicateInputJSON) { replicateInputJSON.num_outputs = numImg };
+
+    return console.log(input);
+};
+
+const runReplicateVariation = async(imageUrl, input) => {
+    input ? input.image = imageUrl : replicateInputJSON.image = imageUrl;
+    
+    return runReplicate(input, 1);
+};
+
+// replicateInputJSON.image = 'hehe.png';
+// console.log(replicateInputJSON);
+runReplicate(null, 2);
+runReplicateVariation('hehecat.png');

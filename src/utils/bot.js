@@ -60,6 +60,20 @@ const buttonBuilder = (customId, label, style, emoji) => {
 
     return button;
 };
+        
+// Handle error message printing.
+const errorEmbed = (errorLog, title, description) => {
+    const splitErrorLog = errorLog ? errorLog.join('\n\n') : '';
+    const errorPrinting = splitErrorLog ? '```' + splitErrorLog + '```' : '';
+    title = title || 'Sorry! We\'ve encountered some error(s).';
+    description = description ? description + '\n' + errorPrinting : errorPrinting;
+
+    return new EmbedBuilder()
+        .setTitle(title)
+        .setDescription(description)
+        .setColor(colors.failureColor)
+        .setTimestamp();
+};
 
 // Calculate time difference in ms.
 function startTimer(timeCreated) {
@@ -79,5 +93,6 @@ module.exports = {
     colors,
     checkEnabled,
     buttonBuilder,
+    errorEmbed,
     startTimer,
 };

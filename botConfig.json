@@ -10,7 +10,7 @@
             "Dall·E 3": "dall-e-3",
             "Dall·E 2": "dall-e-2",
             "Stable Diffusion": "stability-ai/sdxl:392573f9ac8c7f6153001c5ef00fc9fd6611ad361e3ead07160116747895d7ad",
-            "DreamShaper": "lucataco/dreamshaper-xl-turbo:0a1710e0187b01a255302738ca0158ff02a22f4638679533e111082f9dd1b615"
+            "DreamShaper": "lucataco/dreamshaper-xl-lightning:9ebea41ac69a3256f71d8b4f80efe6f0dc719f8be70888d6b481e06258a2ee96"
         },
         
         "Upscaler": {
@@ -40,6 +40,7 @@
         "repeatVarEmoji": "🔀",
         "sparkleEmoji": "✨",
         "wandEmoji": "🪄",
+        "editEmoji": "📝",
         "lowVarEmoji": "🎇",
         "highVarEmoji": "🎆"
     },

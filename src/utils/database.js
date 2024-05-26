@@ -4,6 +4,9 @@ const models = require('../../botConfig.json').GenerationModels;
 const chatModel = models.ChatModels;
 const imageModel = models.ImageModels;
 
+const defaultChatModel = chatModel['GPT-4o'];
+const defaultImageModel = imageModel['Stable Diffusion'];
+
 // Connect to the database.
 const db = new Database('botgpt.db');
 
@@ -14,8 +17,8 @@ db.prepare(`
         isEnabled BOOLEAN DEFAULT 0 NOT NULL,
         personas TEXT NOT NULL,
         currentPersona VARCHAR(255) DEFAULT 'Default' NOT NULL,
-        currentChatModel VARCHAR(255) DEFAULT '${chatModel['GPT-4 Turbo']}' NOT NULL,
-        currentImageModel VARCHAR(255) DEFAULT '${imageModel['Dall·E 3']}' NOT NULL
+        currentChatModel VARCHAR(255) DEFAULT '${defaultChatModel}' NOT NULL,
+        currentImageModel VARCHAR(255) DEFAULT '${defaultImageModel}' NOT NULL
     )
 `).run();
 
@@ -117,7 +120,7 @@ function checkCurrentPersona(channelID, personaName, updatePName) {
 function insertNewData(channelID, isEnabled) {
     // Checks if channel ID exists in db
     if (!channelExists(channelID)) {
-        insertStatement.run(channelID, isEnabled, JSON.stringify(defaultData.personas), 'Default', chatModel['GPT-4 Turbo'], imageModel['Dall·E 3']);
+        insertStatement.run(channelID, isEnabled, JSON.stringify(defaultData.personas), 'Default', defaultChatModel, defaultImageModel);
         return console.log(`\nNew data added for channel ID: ${channelID}.\n`);
     } else {        
         return console.log(`\nChannel ID: ${channelID} already exists in the database.\n`);

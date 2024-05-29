@@ -13,8 +13,6 @@ const {
     TextInputStyle,
     AttachmentBuilder,
     bold, italic, inlineCode} = require('discord.js');
-const fs = require('fs');
-const path = require('path');
 const wait = require('node:timers/promises').setTimeout;
 
 const db = require('../utils/database.js');
@@ -117,6 +115,12 @@ module.exports = {
         
         // Handle error message printing.
         const errorEmbed = (title, description) => bot.errorEmbed(errorLog, title, description);
+
+        // Determine the scale factor for image upscaling based on width (& height).
+        const scaleCalc = (width, height) => bot.scaleCalc(width, height);
+
+        // To download image as PNG from url.
+        const imageDownload = async(imageUrl) => bot.imageDownload(imageUrl);
 
         try {
             // Fetch OpenAI configuration.
@@ -534,7 +538,7 @@ module.exports = {
                         await interaction.deferUpdate();
                         number = 1;
                         let responseUpscale, imageUrl;
-                        scale = scale || scaleCalc();
+                        scale = scale || scaleCalc(width, height);
 
                         imageUrl = pos 
                             ? (checkImgModelType('OpenAI')
@@ -572,27 +576,6 @@ module.exports = {
 
                         data = getUrls;
                         return data;
-                    };
-
-                    // To download image as PNG from url (for variation generation with OpenAI).
-                    async function imageDownload(imageUrl) {
-                        // Fetch the image data
-                        const response = await fetch(imageUrl);
-                        const imageArrayBuffer = await response.arrayBuffer();
-                        const imageBuffer = Buffer.from(imageArrayBuffer);
-
-                        // Create the folder if it doesn't exist
-                        const folderPath = path.join(__dirname, '..', 'assets', 'variations');
-                        if (!fs.existsSync(folderPath)) {
-                            fs.mkdirSync(folderPath, { recursive: true });
-                        };
-
-                        // Save the image as a PNG file
-                        const fileName = `${path.basename(imageUrl, path.extname(imageUrl))}-${Date.now()}.png`;
-                        const imagePath = path.join(folderPath, fileName);
-
-                        fs.writeFileSync(imagePath, imageBuffer);
-                        return fs.createReadStream(imagePath)
                     };
                     
                     async function displayEditImageForm(id) {
@@ -720,26 +703,6 @@ module.exports = {
                                 };
                                 console.error(`ERROR (${id}):\n`, error);
                             });
-                    };
-
-                    // Determine the scale factor for image upscaling based on width (& height).
-                    function scaleCalc() {
-                        if (width === height) {
-                            switch (width) {
-                                case 256:
-                                    return 4;
-                                case 512:
-                                    return 2;
-                                case 768:
-                                    return 1.33;
-                                case 1024:
-                                    return 1;
-                                default:
-                                    return 2;
-                            };
-                        } else {
-                            return 2;
-                        }
                     };
                 };
             });

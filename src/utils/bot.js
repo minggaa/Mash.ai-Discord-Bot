@@ -9,6 +9,8 @@ const {
     ButtonBuilder,
     ButtonStyle,
     bold, italic, strikethrough } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
 const { OpenAI } = require('openai');
 
 const db = require('./database.js');
@@ -87,6 +89,47 @@ function startTimer(timeCreated) {
     return `${timeDiff} ms`;
 };
 
+// Determine the scale factor for image upscaling based on width (& height).
+function scaleCalc(width, height) {
+    if (width === height) {
+        switch (width) {
+            case 256:
+                return 4;
+            case 512:
+                return 2;
+            case 768:
+                return 1.33;
+            case 1024:
+                return 1;
+            default:
+                return 2;
+        };
+    } else {
+        return 2;
+    }
+};
+
+// To download image as PNG from url (for variation generation with OpenAI).
+async function imageDownload(imageUrl) {
+    // Fetch the image data
+    const response = await fetch(imageUrl);
+    const imageArrayBuffer = await response.arrayBuffer();
+    const imageBuffer = Buffer.from(imageArrayBuffer);
+
+    // Create the folder if it doesn't exist
+    const folderPath = path.join(__dirname, '..', 'assets', 'variations');
+    if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath, { recursive: true });
+    };
+
+    // Save the image as a PNG file
+    const fileName = `${path.basename(imageUrl, path.extname(imageUrl))}-${Date.now()}.png`;
+    const imagePath = path.join(folderPath, fileName);
+
+    fs.writeFileSync(imagePath, imageBuffer);
+    return fs.createReadStream(imagePath)
+};
+
 module.exports = {
     client,
     openai,
@@ -95,4 +138,6 @@ module.exports = {
     buttonBuilder,
     errorEmbed,
     startTimer,
+    scaleCalc,
+    imageDownload,
 };

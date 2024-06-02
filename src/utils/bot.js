@@ -24,6 +24,11 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_KEY, 
 });
 
+// Array of potential input options.
+const yesInputs = ['Yes', 'yes', 'ye', 'y', '1'];
+const noInputs = ['No', 'no', 'n', '0'];
+const posStringInputs = ['All', 'all', 'a'];
+
 // Bot's colors.
 const colors = {
     botColor: 'Random',
@@ -133,6 +138,9 @@ async function imageDownload(imageUrl) {
 module.exports = {
     client,
     openai,
+    yesInputs,
+    noInputs,
+    posStringInputs,
     colors,
     checkEnabled,
     buttonBuilder,

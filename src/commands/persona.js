@@ -366,10 +366,8 @@ module.exports = {
                         
                         if (modalId === `deletePersonaModal-${interaction.id}`) {
                             const deletePersonaValue = modalInteraction.fields.getTextInputValue('deletePersonaInput').toLowerCase();
-                            const yesInputs = ['Yes', 'yes', 'ye', 'y', '1'];
-                            const noInputs = ['No', 'no', 'n', '0'];
                             
-                            if (yesInputs.includes(deletePersonaValue)) {
+                            if (bot.yesInputs.includes(deletePersonaValue)) {
                                 const deleteStmt = db.editPersona('delete', channelID, getCurrentPersona);
 
                                 if (deleteStmt === true) {
@@ -377,7 +375,7 @@ module.exports = {
                                 } else {
                                     embedReply(2, `${italic(deleteStmt)}`);
                                 };
-                            } else if (noInputs.includes(deletePersonaValue)) {
+                            } else if (bot.noInputs.includes(deletePersonaValue)) {
                                 embedReply(2, `${italic('Deletion Cancelled.')}`);
                             } else {
                                 embedReply(1, `${italic('Invalid Input: Deletion Failed.')}\n`, `${italic(`Please enter either 'Yes/y' or 'No/n'.`)}`, colors.failureColor);

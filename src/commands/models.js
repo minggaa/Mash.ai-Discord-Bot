@@ -29,7 +29,7 @@ module.exports = {
         .setDescription('Change the OpenAI model used for the bot.')
         .addStringOption(
             option => option.setName('type')
-                .setDescription('Select a model type for Bot-GPT to use.')
+                .setDescription('Select a model type for Mash to use.')
                 .setRequired(true)
                 .addChoices(
                     { name: 'Chat', value: 'chat' },
@@ -282,7 +282,7 @@ module.exports = {
         collector.on('end', async (collected, reason) => {
             if (reason === 'idle') {
                 console.log(`Collected ${collected.size} interactions.`);
-                await updateReply('end', `Your 1 minute selection period is over, selection menu has been closed.\nUse ${inlineCode('/model')} to configure Bot-GPT's models again.`);
+                await updateReply('end', `Your 1 minute selection period is over, selection menu has been closed.\nUse ${inlineCode('/model')} to configure Mash's models again.`);
             }
         });
     },

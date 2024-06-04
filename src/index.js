@@ -109,7 +109,7 @@ try {
             });
         });
 
-        // Append the latest change in Bot-GPT's persona.
+        // Append the latest change in Mash's persona.
         conversation.push({
             role: 'system',
             content: `Your PERSONA is now known as '${personaName}' and you will act and respond according to the following description: ${selectedPersona}`

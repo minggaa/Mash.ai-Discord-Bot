@@ -45,8 +45,8 @@ function checkEnabled(channelID) {
     if (!checkRow) {
         // Create embed to display message.
         const embedMessage = new EmbedBuilder({
-            title: `Seems like Bot-GPT hasn't been enabled in this channel yet.`,
-            description: `To enable Bot-GPT, use the command ${bold('/botgpt')}.`,
+            title: `Seems like Mash hasn't been enabled in this channel yet.`,
+            description: `To enable Mash, use the command ${bold('/mash')}.`,
             timestamp: new Date().toISOString(),
         }).setColor(colors.failureColor);
 

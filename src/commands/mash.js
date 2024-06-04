@@ -4,11 +4,11 @@ const db = require('../utils/database.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('botgpt')
-        .setDescription('Start/Pause a conversation with Bot-GPT.')
+        .setName('mash')
+        .setDescription('Start/Pause a conversation with Mash.')
         .addStringOption(
             option => option.setName('state')
-                .setDescription('Enable/Disable Bot-GPT.')
+                .setDescription('Enable/Disable Mash.')
                 .setRequired(true)
                 .addChoices(
                     { name: 'Start', value: 'start' },

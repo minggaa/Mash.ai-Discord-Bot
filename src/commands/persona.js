@@ -59,7 +59,7 @@ module.exports = {
 
         // Update the OpenAI API bot with the latest change in persona.
         const pushConversation = function (curPersona) {
-            console.log(`Persona to be pushed to Bot-GPT - \n${curPersona}: ${channelPersonas[curPersona]}\n`);
+            console.log(`Persona to be pushed to Mash - \n${curPersona}: ${channelPersonas[curPersona]}\n`);
             return conversation.push({
                 role: 'system',
                 content: `Your PERSONA is now known as '${curPersona}' and you will act and respond according to the following description: ${channelPersonas[curPersona]}`
@@ -123,7 +123,7 @@ module.exports = {
         // Create embed to display persona list.
         const embedView = (embedFields, curModel) => {
             return new EmbedBuilder({
-                title: `${personaEmoji} Bot-GPT Personas in '#${interaction.channel.name}'`,
+                title: `${personaEmoji} Mash Personas in '#${interaction.channel.name}'`,
                 description: `${currentEmoji} ${bold('Current Persona:')} ${italic(curModel)}`,
                 fields: embedFields,
                 timestamp: new Date().toISOString(),

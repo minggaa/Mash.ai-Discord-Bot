@@ -2,11 +2,34 @@
 require('dotenv/config');
 const fs = require('fs');
 const db = require('./src/utils/database.js');
+const bot = require('./src/utils/bot.js');
 
 const config = require('./botConfig.json');
 const pModals = config.personaModalsText;
 const models = config.GenerationModels;
 const imageSize = config.ImageSizes;
+
+const sampleData = [
+    { url: 'https://pngfre.com/wp-content/uploads/transparent-cat-by-pngfre-56-1.png', },
+    { url: 'https://i.pinimg.com/originals/b2/54/25/b25425c4ab837d93826e0e19e4aa4945.png', },
+    // { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Cute_Cat_with_Beautiful_Green_Eyes.png/1200px-Cute_Cat_with_Beautiful_Green_Eyes.png', },
+    // { url: 'https://www.freepnglogos.com/uploads/cat-png/cat-sweety-white-brown-11.png', },
+];
+
+const sampleData2 = [
+    'https://pngfre.com/wp-content/uploads/transparent-cat-by-pngfre-56-1.png',
+    'https://i.pinimg.com/originals/b2/54/25/b25425c4ab837d93826e0e19e4aa4945.png',
+    // 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Cute_Cat_with_Beautiful_Green_Eyes.png/1200px-Cute_Cat_with_Beautiful_Green_Eyes.png',
+    // 'https://www.freepnglogos.com/uploads/cat-png/cat-sweety-white-brown-11.png',
+];
+
+const sampleData3 = [
+    'https://w0.peakpx.com/wallpaper/108/953/HD-wallpaper-cats-cat.jpg',
+    'https://www.freepnglogos.com/uploads/cat-png/cat-sweety-white-brown-11.png',
+];
+
+const mockReturn1 = 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Cute_Cat_with_Beautiful_Green_Eyes.png/1200px-Cute_Cat_with_Beautiful_Green_Eyes.png';
+const mockReturn2 = 'https://www.freepnglogos.com/uploads/cat-png/cat-sweety-white-brown-11.png';
 
 // Persona data file config
 // const personaData = fs.readFileSync('persona.json');
@@ -97,8 +120,8 @@ const deleteTestPersonas = (x) => {
 
 // console.log(db.readDataBy('id', cid));
 
-const channelPersonas = db.readPersona(cid);
-const getCurrentPersona = db.readDataBy('id', cid).currentPersona;
+// const channelPersonas = db.readPersona(cid);
+// const getCurrentPersona = db.readDataBy('id', cid).currentPersona;
 let selectMenuObj = [];
 
 function populateInteractions() {
@@ -182,5 +205,66 @@ const runReplicateVariation = async(imageUrl, input) => {
 
 // replicateInputJSON.image = 'hehe.png';
 // console.log(replicateInputJSON);
-runReplicate(null, 2);
-runReplicateVariation('hehecat.png');
+// runReplicate(null, 2);
+// runReplicateVariation('hehecat.png');
+
+let isSingledOut;
+let isMultiple;
+const number = 3;
+
+const checkImageStatus = () => isSingledOut = !(isMultiple = (number > 1) ? true : false);
+// checkImageStatus();
+// console.log('Singled Out?: ', isSingledOut);
+// console.log('Multiple?: ', isMultiple);
+
+const check = (x) => {
+    if (x) return true;
+    else return false;
+};
+
+// console.log(check(1));
+
+// console.log(bot.yesInputs.includes('yes'));
+const checkInputOld = (type, input) => {
+    const range = [ [1, 2, 3, 4], [1, 2, 3, 4, ...bot.posStringInputs] ];
+    // check if input is within the range of image currently available
+    if (range[type-1].includes(input)) {
+        if (typeof input === 'number') return (input >= 1 && input <= number);
+        if (typeof input === 'string') return range[type-1].includes(input);
+    } else {
+        return false;
+    };
+};
+
+let x = 3;
+const checkInput = (type, input) => {
+    const range = [1, 2, 3, 4];
+    const parsedInput = typeof input === 'string' ? parseInt(input) : input;
+
+    // check if input is within the range of image currently available
+    switch(type) {
+        case 1:
+            return range.includes(parsedInput) && (parsedInput >= 1 && parsedInput <= number);
+        case 2:
+            if (range.includes(parsedInput) && (parsedInput >= 1 && parsedInput <= number)) {
+                x = parseInt(x);
+                return true;
+            };
+            if (typeof input === 'string' && isNaN(parsedInput)) {
+                const checkStrOptions = [...bot.posStringInputs].includes(input.toLowerCase());
+                checkStrOptions ? x = 'reroll' : undefined;
+                return checkStrOptions;
+            };
+            x = undefined;
+            return false;
+    };
+};
+// console.log(`\nOutput of input '${x}': ${checkInput(2, x)}\nType of '${x}': ${typeof x}\n`);
+
+module.exports = {
+    sampleData,
+    sampleData2,
+    sampleData3,
+    mockReturn1,
+    mockReturn2,
+};

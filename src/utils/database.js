@@ -8,7 +8,7 @@ const defaultChatModel = chatModel['GPT-4o'];
 const defaultImageModel = imageModel['Stable Diffusion'];
 
 // Connect to the database.
-const db = new Database('botgpt.db');
+const db = new Database('mash.db');
 
 // Prepare database table.
 db.prepare(`
@@ -24,7 +24,7 @@ db.prepare(`
 
 const defaultData = {
     personas: {
-        "Default": "BotGPT is a helpful and friendly assistant.",
+        "Default": "Mash is a helpful and friendly assistant.",
         "Salesperson": "You are a friendly salesperson.",
         "Support": "A knowledgeable and supportive agent, with every reply you will end the sentence with howdy!."
     }

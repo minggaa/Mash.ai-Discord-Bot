@@ -43,7 +43,9 @@
         "wandEmoji": "🪄",
         "editEmoji": "📝",
         "lowVarEmoji": "🎇",
-        "highVarEmoji": "🎆"
+        "highVarEmoji": "🎆",
+        "pinEmoji": "📌",
+        "unpinEmoji": "❌"
     },
 
     "PersonaModalsText": {

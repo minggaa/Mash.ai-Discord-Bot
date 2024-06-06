@@ -63,9 +63,9 @@ try {
         const isChannelEnabled = channelData.isEnabled ? true : false;
         // console.log(isChannelEnabled + " | " + message.mentions.users.has(client.user.id));
         
-        // Listens and responds to Discord messages if channel is enabled, and prevent replies with/without @mention.
+        // Listens and responds to Discord messages if channel is enabled, and prevent replies with/without @mention & system messages.
         if (!isChannelEnabled && !message.mentions.users.has(client.user.id)) return;
-        if (message.mentions.users.has(client.user.id)) return;
+        if (message.mentions.users.has(client.user.id) || message.system) return;
 
         // Message check conditions for the bot to ignore.
         if (message.author.bot) return;

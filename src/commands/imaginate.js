@@ -12,11 +12,14 @@ const {
     TextInputBuilder,
     TextInputStyle,
     AttachmentBuilder,
+    Collection,
+    MessageManager,
     bold, italic, inlineCode} = require('discord.js');
 const wait = require('node:timers/promises').setTimeout;
 
 const db = require('../utils/database.js');
 const bot = require('../utils/bot.js');
+const test = require('../../test.js');
 const colors = bot.colors;
 
 const config = require('../../botConfig.json');
@@ -32,20 +35,15 @@ const repeatEmoji = emojis.repeatEmoji;
 const sparkleEmoji = emojis.sparkleEmoji;
 const wandEmoji = emojis.wandEmoji;
 const editEmoji = emojis.editEmoji;
+const pinEmoji = emojis.pinEmoji;
+const unpinEmoji = emojis.unpinEmoji;
 
-const sampleData = [
-    { url: 'https://pngfre.com/wp-content/uploads/transparent-cat-by-pngfre-56-1.png', },
-    { url: 'https://i.pinimg.com/originals/b2/54/25/b25425c4ab837d93826e0e19e4aa4945.png', },
-    // { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Cute_Cat_with_Beautiful_Green_Eyes.png/1200px-Cute_Cat_with_Beautiful_Green_Eyes.png', },
-    // { url: 'https://www.freepnglogos.com/uploads/cat-png/cat-sweety-white-brown-11.png', },
-];
+const sampleData = [...test.sampleData.slice()];
 
-const sampleData2 = [
-    'https://pngfre.com/wp-content/uploads/transparent-cat-by-pngfre-56-1.png',
-    'https://i.pinimg.com/originals/b2/54/25/b25425c4ab837d93826e0e19e4aa4945.png',
-    // 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Cute_Cat_with_Beautiful_Green_Eyes.png/1200px-Cute_Cat_with_Beautiful_Green_Eyes.png',
-    // 'https://www.freepnglogos.com/uploads/cat-png/cat-sweety-white-brown-11.png',
-];
+const sampleData2 = [...test.sampleData2.slice()];
+
+const mockReturn1 = test.mockReturn1;
+const mockReturn2 = test.mockReturn2;
 
 // Get available images sizes from JSON.
 const getSizes = Object.entries(imageSize).map(([name, value]) => ({
@@ -56,7 +54,7 @@ const getSizes = Object.entries(imageSize).map(([name, value]) => ({
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('imaginate')
-        .setDescription('Let Bot-GPT generate your imaginations.')
+        .setDescription('Let Mash generate your imaginations.')
         .addStringOption(
             option => option.setName('prompt')
                 .setDescription('Prompt for your image.')
@@ -76,7 +74,10 @@ module.exports = {
     async execute(interaction) {
         let prompt = interaction.options.getString('prompt');
         let number = interaction.options.getInteger('number') || 1;
-        let size = interaction.options.getString('size') || imageSize.squareXS;
+        let size = interaction.options.getString('size') || imageSize.squareS;
+        let sizeSplit = size.split('x');
+        let width = parseInt(sizeSplit[0]);
+        let height = parseInt(sizeSplit[1]);
         let negPrompt = '';
         let seed;
         let response;
@@ -84,25 +85,25 @@ module.exports = {
         let count;
         let errorFlag;
         let getCurrentImageModel;
-        let getPredictionId = 'mc6sphmzhsrgj0cfpqxb76gk50';
-        let isNSFW = true;
+        let getPredictionId = 'eshb7x2axxrgg0cfxk5v4jhs7r';
+        let getMessage;
+        let isNSFW = false;
         let isErrorStatus;
         let isSingledOut = (number > 1) ? false : true;
 
-        const sizeSplit = size.split('x');
-        const width = parseInt(sizeSplit[0]);
-        const height = parseInt(sizeSplit[1]);
+        const errorLog = [];
         const channelID = interaction.channelId.toString();
         const retrieveRow = db.readDataBy('id', channelID);
-        const errorLog = [];
-        const replicateInputJSON = {
-            width: width,
-            height: height,
-            prompt: prompt,
-            negative_prompt: negPrompt,
-            num_outputs: number,
-            scheduler: "K_EULER",
-            disable_safety_checker: isNSFW,
+        const replicateInputJSON = () => {
+            return {
+                width: width,
+                height: height,
+                prompt: prompt,
+                negative_prompt: negPrompt,
+                num_outputs: number,
+                scheduler: "K_EULER",
+                disable_safety_checker: isNSFW,
+            };
         };
 
         // Check if bot has ever been used in this channel by its existence in the db.
@@ -139,9 +140,6 @@ module.exports = {
             };
     
             fetchCurrentImageModel();
-            
-            // Defer reply to allow time for the API to send response.
-            // await interaction.deferReply();
             
             // Checks if the current image model type is 'OpenAI' or 'Replicate'.
             const checkImgModelType = (type) => {
@@ -187,16 +185,17 @@ module.exports = {
 
             const runReplicate = async(model, input, numOutputs) => {
                 model = model || getCurrentImageModel;
+                input = input || replicateInputJSON();
                 numOutputs = numOutputs || number;
-                input = input || replicateInputJSON;
-                isSingledOut = (number > 1) ? false : true;
 
-                if (input === replicateInputJSON) { replicateInputJSON.num_outputs = numOutputs };
-                
+                input === replicateInputJSON()
+                    ? replicateInputJSON().num_outputs = numOutputs
+                    : input.num_outputs = numOutputs;
+                console.log(input);
                 const onProgress = (prediction) => {
                     const timeCreated = new Date(prediction.created_at);
                     const lastLongLine = prediction.logs.split("\n").pop();
-                    // getPredictionId = prediction.id;
+                    getPredictionId = prediction.id;
                     console.log({id: prediction.id, status: prediction.status, time: bot.startTimer(timeCreated), log: lastLongLine});
                 };
 
@@ -209,21 +208,38 @@ module.exports = {
             };
 
             const runReplicateVariation = async(imageUrl, input) => {
-                input ? input.image = imageUrl : replicateInputJSON.image = imageUrl;
-                const numOutputs = input ? input.num_outputs : 1;
+                input ? input.image = imageUrl : replicateInputJSON().image = imageUrl;
+                const numOutputs = input || 1;
                 
                 console.log(input);
                 return await runReplicate(null, input, numOutputs);
             };
 
-            const getPredictionSeed = async(predictionId) => {
+            const getPredictionSeed = async(predictionId, noLog = false) => {
                 predictionId = predictionId || getPredictionId;
-                const getPredictionData = await replicate.predictions.get(predictionId);
-                seed = parseInt(getPredictionData.logs.split("\n")[0].split(": ")[1]);
-                if (!seed) console.log('Unable to retrieve seed: Prediction data has expired.\n');
+                let getPredictionData;
+                const checkId = interaction.customId?.includes('upscale') || false;
+                
+                if (!checkId && predictionId) {
+                    getPredictionData = await replicate.predictions.get(predictionId)
+                        .then(() => {
+                            seed = parseInt(getPredictionData?.logs?.split("\n")[0].split(": ")[1]) || NaN;
+                        }).catch(async(error) => {
+                            console.error('Replicate ERROR:\n', error);
+                            errorLog.push(`Invalid prediction ID: ${predictionId}`, error);
+                            return await interaction.followUp({ embeds: [errorEmbed()], files: [], ephemeral: true, });
+                        });
+                    if (!getPredictionData) getPredictionId = undefined;
+                };
+                
+                if (!noLog) {
+                    !seed
+                        ? !getPredictionData || getPredictionData?.data_removed
+                            ? console.log('Unable to retrieve seed: Prediction data has expired.\n')
+                            : console.log('Unable to retrieve seed.\n')
+                        : console.log(seed);
+                };
                 // console.log(getPredictionData);
-                console.log(seed);
-
                 return seed;
             };
 
@@ -280,13 +296,14 @@ module.exports = {
                     let description = `${bold('Prompt: ')}\n${prompt}`;
                     negPrompt ? description += `\n\n${bold('Negative Prompt: ')}\n${negPrompt}` : description;
                     seed ? description += `\n\n${bold('Seed: ')}\n${seed}` : description;
+                    let footer = getPredictionId ? `${getPredictionId}` : '\t';
 
                     let value;
                     value = checkImgModelType('OpenAI')
                         ? data[key].url
                         : data[key];
                     
-                    if (needFetch) { value = await getStatus(value) };
+                    if (needFetch) value = await getStatus(value);
 
                     try {
                         const imageEmbed = images.length === 0 
@@ -295,6 +312,7 @@ module.exports = {
                                 .setURL(placeholderLink)
                                 .setImage(value)
                                 .setColor(colors.botColor)
+                                .setFooter({ text: footer })
                                 .setTimestamp()
                             : new EmbedBuilder().setURL(placeholderLink).setImage(value);
                         images.push(imageEmbed);
@@ -310,16 +328,20 @@ module.exports = {
             };
 
             // Returns buttons needed for further interaction.
-            const buttons = () => {
+            const buttons = async() => {
                 const data = response;
+                const isPinned = await isMsgPinned();
                 const actionRows = [];
                 const variationActionRow = new ActionRowBuilder().addComponents();
                 const upscalingActionRow = new ActionRowBuilder().addComponents();
                 const variationSelectionActionRow = new ActionRowBuilder().addComponents();
                 const upscaleImageSelectionActionRow = new ActionRowBuilder().addComponents();
+                const miscActionRow = new ActionRowBuilder().addComponents();
 
                 const rerollButton = bot.buttonBuilder(`reroll`, '\t', ButtonStyle.Secondary, repeatEmoji);
                 const editFormButton = bot.buttonBuilder(`editForm`, '\t', ButtonStyle.Secondary, editEmoji);
+                const pinButton = bot.buttonBuilder(`pin`, 'Pin', ButtonStyle.Secondary, pinEmoji);
+                const unpinButton = bot.buttonBuilder(`unpin`, 'Unpin', ButtonStyle.Secondary, unpinEmoji);
 
                 if (!data) return;
                 
@@ -327,8 +349,6 @@ module.exports = {
 
                 if (number > 1) {
                     Object.keys(data).forEach(key => {
-                        const value = data[key].url;
-
                         const variationSelctionButton = bot.buttonBuilder(`variation-${count}`, `V${count}`, ButtonStyle.Secondary);
                         variationSelectionActionRow.components.push(variationSelctionButton);
 
@@ -339,7 +359,7 @@ module.exports = {
                     });
 
                     checkImgModelType('OpenAI')
-                        ? variationSelectionActionRow.components.push(rerollButton, editFormButton)
+                        ? variationSelectionActionRow.components.push(rerollButton)
                         : variationSelectionActionRow.components.push(rerollButton, editFormButton);
                     actionRows.push(variationSelectionActionRow, upscaleImageSelectionActionRow);
 
@@ -355,20 +375,31 @@ module.exports = {
 
                     actionRows.push(variationActionRow, upscalingActionRow);
                 };
+                
+                isPinned
+                    ? miscActionRow.components.push(unpinButton)
+                    : miscActionRow.components.push(pinButton);
+                actionRows.push(miscActionRow);
 
                 return actionRows;
             };
             
             // To get image url status code (check if image url has expired).
             const getStatus = async(url) => {
-                const request = new Request(url);
+                try {
+                    const request = new Request(url);
 
-                const status = await fetch(request)
-                    .then((response) => {
-                        console.log(`(${url}) - code: ${response.status}`);
-                        return response.status;
-                    });
-                return checkStatus(url, status);
+                    const status = await fetch(request)
+                        .then((response) => {
+                            console.log(`(${url}) - code: ${response.status}`);
+                            return response.status;
+                        });
+                    return checkStatus(url, status);
+                } catch (error) {
+                    console.error('URL STATUS ERROR:\n', error);
+                    errorLog.push(error);
+                    errorFlag = true;
+                };
             };
 
             const checkStatus = (url, status) => {
@@ -383,6 +414,14 @@ module.exports = {
                 };
                 
                 return isFailure ? noImageUrl : url;
+            };
+
+            // Check if command message is pinned.
+            const isMsgPinned = async() => {
+                getMessage = await interaction.fetchReply();
+                const isPinned = getMessage.pinned;
+                console.log(`isPinned?: ${isPinned}`);
+                return isPinned;
             };
 
             // Set loading animation for the image in generation.
@@ -426,12 +465,13 @@ module.exports = {
     
             // Replies to the interaction with the generated image(s) & buttons.
             const interactionReply = async(data) => {
+                await getPredictionSeed(null, true);
                 const embed = await getResponses(data, true);
                 const noImage = new AttachmentBuilder('./src/assets/no-image.png');
                 let component;
                 let file = [];
 
-                (errorFlag) ? component = [] : component = buttons();
+                (errorFlag) ? component = [] : component = await buttons();
                 
                 if (isErrorStatus) {
                     component = [];
@@ -457,94 +497,101 @@ module.exports = {
                 if (interaction.isButton()) {
                     const varyIdSplit = interaction.customId.split('-');
                     const getCount = varyIdSplit[1];
-                    let data = response;
-
-                    // Update old image/loading gif with newly generated set of image(s).
 
                     // Receive user button input.
                     switch (interaction.customId) {
                         case `variation-${getCount}`:
-                            console.log(`Variation ${getCount} button clicked`);
+                            console.log(`\nVariation ${getCount} button clicked`);
                             await interactionReply(await variationHandler(getCount, true));
                             break;
                         case `upscale-${getCount}`:
-                            console.log(`Upscale ${getCount} button clicked`);
+                            console.log(`\nUpscale ${getCount} button clicked`);
                             await interactionReply(await upscaleHandler(getCount));
                             break;
                         case `reroll`:
-                            console.log(`Reroll button clicked`);
+                            console.log(`\nReroll button clicked`);
                             await interactionReply(await rerollHandler());
                             break;
                         case `editForm`:
-                            console.log(`Edit Form button clicked`);
+                            console.log(`\nEdit Form button clicked`);
                             await displayEditImageForm(`editImageForm-${interaction.id}`);
                             break;
                         case `vary`:
-                            console.log(`Vary button clicked`);
+                            console.log(`\nVary button clicked`);
                             await interactionReply(await variationHandler(null, false));
                             break;
                         case `upscaleX1.5`:
-                            console.log(`Upscale x1.5 button clicked`);
+                            console.log(`\nUpscale x1.5 button clicked`);
                             await interactionReply(await upscaleHandler(null, 1.5));
                             break;
                         case `upscaleX2`:
-                            console.log(`Upscale x2 button clicked`);
+                            console.log(`\nUpscale x2 button clicked`);
                             await interactionReply(await upscaleHandler(null, 2));
                             break;
+                        case `pin`:
+                            console.log(`\nPin button clicked`);
+                            await pinHandler();
+                            break;
+                        case `unpin`:
+                            console.log(`\nUnpin button clicked`);
+                            await pinHandler();
+                            break;
                         default:
-                            console.log(`Unhandled button customId ${interaction.customId}\n`);
+                            console.log(`\nUnhandled button customId ${interaction.customId}\n`);
                     };
 
                     // Handle image variation generation.
                     async function variationHandler(pos, isMultiple, input, defer = true) {
-                        if (defer) await interaction.deferUpdate();
                         let responseVariation, getVarUrl, imageUrl;
-                        isSingledOut = isMultiple ? false : true;
+
+                        if (defer) await interaction.deferUpdate();
+                        else isSingledOut = isMultiple ? false : true;
 
                         if (checkImgModelType('OpenAI')) {
-                            imageUrl = isMultiple ? data[pos-1].url : data[0];
+                            imageUrl = isMultiple ? response[pos-1].url : response[0];
                             console.log(imageUrl);
                             
                             await loadingState(pos);
                             
                             // Pass the PNG file to the OpenAI API
                             responseVariation = await runOpenAIVariation(await imageDownload(imageUrl));
-                            getVarUrl = responseVariation.data[0].url;
+                            getVarUrl = responseVariation.response[0].url;
 
-                            if (isMultiple) {
-                                data[pos-1].url = getVarUrl;
-                            } else {
-                                data[0].url = getVarUrl
-                            };
+                            isMultiple
+                                ? response[pos-1].url = getVarUrl
+                                : response[0].url = getVarUrl;
+                            
                         } else if (checkImgModelType('Replicate')) {
-                            imageUrl = isMultiple ? data[pos-1] : data[0];
+                            imageUrl = isMultiple ? response[pos-1] : response[0];
 
                             await loadingState(pos);
-                            responseVariation = await runReplicateVariation(imageUrl, input);
-                            getVarUrl = (isMultiple && !pos) ? responseVariation : responseVariation[0];
+                            await wait(3_000);
+                            // responseVariation = await runReplicateVariation(imageUrl, input);
+                            getVarUrl = !pos ? mockReturn1 : sampleData2;//(isMultiple && !pos) // To handle multiple images in embed and detecting if an image position was selected.
+                                // ? responseVariation : responseVariation[0];
 
-                            if (isMultiple) {
-                                (!pos) ? data = getVarUrl : data[pos-1] = getVarUrl;
-                            } else {
-                                data[0] = getVarUrl;
-                            };
+                            isMultiple
+                                ? (!pos) 
+                                    ? response = getVarUrl 
+                                    : response[pos-1] = getVarUrl
+                                : response[0] = getVarUrl;
                         };
 
-                        console.log(data);
-                        return data;
+                        // console.log('Data:\n', response);
+                        return response;
                     };
 
                     async function upscaleHandler(pos, scale) {
                         await interaction.deferUpdate();
-                        number = 1;
                         let responseUpscale, imageUrl;
+                        number = 1, isSingledOut = true;
                         scale = scale || scaleCalc(width, height);
 
                         imageUrl = pos 
                             ? (checkImgModelType('OpenAI')
-                                ? data[pos-1].url
-                                : data[pos-1])
-                            : data[0];
+                                ? response[pos-1].url
+                                : response[pos-1])
+                            : response[0];
 
                         const upscalerInput = {
                             image: imageUrl,
@@ -553,29 +600,44 @@ module.exports = {
                         
                         await loadingState(null, true);
                         responseUpscale = await runReplicate(upscalerModel, upscalerInput, number);
-                        data = [ responseUpscale ];
+                        response = [ responseUpscale ];
 
-                        return data;
+                        return response;
                     };
 
-                    async function rerollHandler(input) {
-                        await interaction.deferUpdate();
-                        isSingledOut = false;
+                    async function rerollHandler(input, defer = true) {
+                        if (defer) await interaction.deferUpdate();
+                        
                         let responseReroll, getUrls;
 
                         await loadingState();
-                        if (checkImgModelType('OpenAI')) { // need to get all the urls and download them
-                            // console.log(data);
+                        if (checkImgModelType('OpenAI')) {
                             responseReroll = await runOpenAI();
-                            getUrls = responseReroll.data;
+                            getUrls = responseReroll.response;
 
                         } else if (checkImgModelType('Replicate')) {
-                            responseReroll = await runReplicate(null, input, numOutputs);
+                            responseReroll = await runReplicate(null, input, number);
                             getUrls = responseReroll;
                         };
 
-                        data = getUrls;
-                        return data;
+                        response = getUrls;
+                        return response;
+                    };
+
+                    async function pinHandler() {
+                        await interaction.deferUpdate();
+                        const isPinned = await isMsgPinned();
+                        
+                        if (isPinned) {
+                            await getMessage.unpin();
+                        } else {
+                            await getMessage.pin();
+                        };
+                        
+                        // Update buttons
+                        return await interaction.editReply({
+                            components: await buttons()
+                        });
                     };
                     
                     async function displayEditImageForm(id) {
@@ -609,36 +671,48 @@ module.exports = {
                             const seedActionRow = new ActionRowBuilder().addComponents(
                                 new TextInputBuilder({
                                     customId: 'seedInput',
-                                    label: 'Seed',
-                                    placeholder: 'Random seed. Leave blank to randomize the seed',
+                                    label: 'Seed (Leave blank to randomize the seed)',
+                                    placeholder: 'Random seed',
                                     value: await getPredictionSeed(),
                                     style: TextInputStyle.Short,
                                     required: false
                                 })
                             );
-        
-                            console.log(`In displayEditImageForm:\n    isSingledOut: ${isSingledOut}`);
-                            const lastActionRow = new ActionRowBuilder().addComponents();
+                            const useImageActionRow = new ActionRowBuilder().addComponents(
+                                new TextInputBuilder({
+                                    customId: 'useImageInput',
+                                    label: 'Use Image as Reference',
+                                    placeholder: `Enter 'Yes' or 'No'`,
+                                    value: 'No',
+                                    style: TextInputStyle.Short,
+                                    required: true
+                                })
+                            );
+
+                            editImageFormModal.addComponents(promptActionRow, negPromptActionRow, seedActionRow, useImageActionRow);
+
+                            const imageOptionsActionRow = new ActionRowBuilder().addComponents();
                             (isSingledOut) 
-                                ? lastActionRow.components.push(
+                                ? imageOptionsActionRow.components.push(
                                     new TextInputBuilder({
                                         customId: 'numOutputInput',
                                         label: 'Number of Output Images',
                                         placeholder: '1',
                                         value: 1,
+                                        max_length: 1,
                                         style: TextInputStyle.Short,
                                         required: true
                                     }))
-                                : lastActionRow.components.push(
+                                : imageOptionsActionRow.components.push(
                                     new TextInputBuilder({
                                         customId: 'imagePosInput',
                                         label: 'Select Image to Regenerate',
-                                        placeholder: `Select by Image Position Number or Regenerate 'All'`,
+                                        placeholder: `Select by 'Image Position Number' or by 'All'`,
+                                        max_length: 3,
                                         style: TextInputStyle.Short,
                                         required: true
                                     }));
-                    
-                            editImageFormModal.addComponents(promptActionRow, negPromptActionRow, seedActionRow, lastActionRow);
+                            editImageFormModal.addComponents(imageOptionsActionRow);
         
                             await interaction.showModal(editImageFormModal);
         
@@ -657,21 +731,75 @@ module.exports = {
                             })
                             .then(async(modalInteraction) => {
                                 await modalInteraction.deferUpdate();
-                                const posStringInputs = ['All', 'all', 'a'];
+                                let isMultiple;
+                                let isUsingImage;
                                 let editedResponse;
                                 
+                                // Retrieve input values from modal.
                                 prompt = modalInteraction.fields.getTextInputValue('promptInput');
                                 negPrompt = modalInteraction.fields.getTextInputValue('negPromptInput');
                                 seed = parseInt(modalInteraction.fields.getTextInputValue('seedInput')) || NaN;
+                                const useImageValue = modalInteraction.fields.getTextInputValue('useImageInput') || bot.noInputs[0];
                                 const numOutputValue = !isSingledOut ? 1 : parseInt(modalInteraction.fields.getTextInputValue('numOutputInput'));
                                 let imagePosValue = isSingledOut ? undefined : modalInteraction.fields.getTextInputValue('imagePosInput');
+
+                                // Check if user inputs valid value for num_outputs and image position number.
+                                const checkInput = (type, input) => {
+                                    const range = [1, 2, 3, 4];
+                                    const parsedInput = typeof input === 'string' ? parseInt(input) : input;
                                 
-                                imagePosValue 
-                                    ? (posStringInputs.includes(imagePosValue.toLowerCase())
-                                        ? imagePosValue = 'reroll'
-                                        : imagePosValue = parseInt(imagePosValue))
-                                    : undefined;
+                                    // Checks if input is within the range of image currently available
+                                    switch(type) {
+                                        case 1:
+                                            return range.includes(parsedInput) && (parsedInput >= 1 && parsedInput <= 4);
+                                        case 2:
+                                            // Checks if user inputs a number or 'All' option
+                                            if (range.includes(parsedInput) && (parsedInput >= 1 && parsedInput <= number)) {
+                                                imagePosValue = parsedInput;
+                                                return true;
+                                            };
+                                            if (typeof input === 'string' && isNaN(parsedInput)) {
+                                                const checkStrOptions = [...bot.posStringInputs].includes(input.toLowerCase());
+                                                checkStrOptions ? imagePosValue = 'reroll' : undefined;
+                                                return checkStrOptions;
+                                            };
+                                            return false;
+                                    };
+                                };
+                                const replyError = async(value, description) => {
+                                    const errorMessage = `You entered: ${value}\n` + bold('Expected ' + description);
+                                    return await modalInteraction.followUp({
+                                        embeds: [
+                                            new EmbedBuilder({
+                                                title: `Sorry but you entered an invalid input!`,
+                                                description: errorMessage,
+                                                color: colors.failureColor,
+                                            }).setTimestamp()
+                                        ],
+                                        ephemeral: true,
+                                    });
+                                };
+
+                                if (!checkInput(1, numOutputValue)) return await replyError(numOutputValue, `a 'valid' input between ${inlineCode('1 to 4')}.`);
+                                if (!checkInput(2, imagePosValue) && imagePosValue != undefined) return await replyError(imagePosValue, `a 'valid' selection between ${inlineCode(`1 to ${number}`)} or ${inlineCode(`'All'`)} to select all.`);
                                 
+                                isUsingImage = bot.yesInputs.includes(useImageValue) ? true : bot.noInputs.includes(useImageValue) ? false : undefined;
+                                
+                                const checkImageStatus = () => isSingledOut = !(isMultiple = (number > 1) ? true : false);
+                                const runVariation = async() => await variationHandler(imagePosValue, isMultiple, input, false);
+                                const runDefaultRepli = async() => {
+                                    await loadingState(imagePosValue);
+                                    const res = await runReplicate(null, input, numOutputValue);
+                                    const getVarUrl = (isMultiple && !imagePosValue) ? res : res[0];
+        
+                                    isMultiple
+                                        ? (!imagePosValue) 
+                                            ? response = getVarUrl 
+                                            : response[imagePosValue-1] = getVarUrl
+                                        : response[0] = getVarUrl;
+
+                                    return response;
+                                };
                                 const input = {
                                     width: width,
                                     height: height,
@@ -684,15 +812,17 @@ module.exports = {
 
                                 if (seed) input.seed = seed;
 
-                                if (!isSingledOut) {
-                                    if (imagePosValue === 'reroll') {
-                                        editedResponse = await rerollHandler(input);
-                                    }
-                                    editedResponse = await variationHandler(imagePosValue, true, input, false);
-                                } else {
+                                if (isSingledOut) { //can do isSingledOut checking here
                                     number = numOutputValue;
-                                    const isMultiple = (number > 1) ? true : false;
-                                    editedResponse = await variationHandler(imagePosValue, isMultiple, input, false);
+                                    checkImageStatus();
+                                    editedResponse = isUsingImage ? await runVariation() : await runDefaultRepli();
+                                } else {
+                                    checkImageStatus();
+                                    editedResponse = imagePosValue === 'reroll'
+                                        ? await rerollHandler(input, false)
+                                        : isUsingImage
+                                            ? await runVariation()
+                                            : await runDefaultRepli();
                                 };
 
                                 return await interactionReply(editedResponse);

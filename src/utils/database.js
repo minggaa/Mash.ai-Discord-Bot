@@ -11,7 +11,7 @@ const imageModel = models.ImageModels;
 const defaultChatModel = chatModel['GPT-4o'];
 const defaultImageModel = imageModel['Stable Diffusion'];
 const defaultScheduler = schemaFields.scheduler[0];
-const defaultRefine = schemaFields.refine[0];
+const defaultRefiner = schemaFields.refiner[0];
 
 // Connect to the database.
 const db = new Database('mash.db');
@@ -37,7 +37,7 @@ const defaultData = {
     },
     formSettings: {
         "scheduler": defaultScheduler,
-        "refine": defaultRefine
+        "refiner": defaultRefiner
     }
 };
 const nullVar = undefined || null;

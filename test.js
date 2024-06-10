@@ -98,7 +98,7 @@ const cid = '1170253143767011409';
 // db.insertNewData(cid, 0);
 // console.log(db.checkColumn('currentModel', cid));
 // console.log(db.channelExists(cid));
-// console.log(db.readJSONData('formSettings', cid, 'refine'));
+// console.log(db.readJSONData('formSettings', cid, 'refiner'));
 // console.log(db.updateData(cid, 'currentPersona', 'Default'));
 // console.log(db.deleteData('id', cid));
 // console.log(db.deleteData(null, 'all'));
@@ -112,10 +112,10 @@ const deleteTestPersonas = (x) => {
 // deleteTestPersonas(20);
 
 const getCurrentScheduler = db.readDataBy('id', cid).formSettings.scheduler;
-const getCurrentRefine = db.readDataBy('id', cid).formSettings.refine;
+const getCurrentRefiner = db.readDataBy('id', cid).formSettings.refiner;
 const scheduler = schemaFields.scheduler;
-const refine = schemaFields.refine;
-console.log(db.editJSONData('formSettings', 'update', cid, 'refine', getCurrentRefine, null, refine[0]));
+const refiner = schemaFields.refiner;
+console.log(db.editJSONData('formSettings', 'update', cid, 'refiner', getCurrentRefiner, null, refiner[0]));
 // db.updateData(cid, 'currentPersona', 'Test22');
 
 // const addNewStmt = db.editJSONData('insert', cid, 'Testing', description);
@@ -126,7 +126,7 @@ console.log(db.editJSONData('formSettings', 'update', cid, 'refine', getCurrentR
 // }
 
 // console.log(db.readDataBy('id', cid));
-console.log(/*`${getCurrentScheduler}\n${getCurrentRefine}\n`,*/ db.readJSONData('formSettings', cid));
+console.log(/*`${getCurrentScheduler}\n${getCurrentrefiner}\n`,*/ db.readJSONData('formSettings', cid));
 
 // const channelPersonas = db.readJSONData('personas', cid);
 // const getCurrentPersona = db.readDataBy('id', cid).currentPersona;

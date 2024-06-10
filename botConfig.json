@@ -39,7 +39,7 @@
             "DPMSolverMultistep"
         ],
 
-        "refine": [
+        "refiner": [
             "no_refiner",
             "expert_ensemble_refiner",
             "base_image_refiner"

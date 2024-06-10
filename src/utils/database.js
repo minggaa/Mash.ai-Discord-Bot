@@ -49,11 +49,12 @@ const toTitleCase = (input) => {
 // Writing JSON to the database.
 const insertStatement = db.prepare('INSERT OR IGNORE INTO appStatus (channelID, isEnabled, personas, currentPersona, currentChatModel, currentImageModel, formSettings) VALUES (?, ?, ?, ?, ?, ?, ?)');
 
-function restoreDefaultPersonas(channelID) {
+function restoreDefault(column, channelID) {
     try {
-        const insertPersonas = db.prepare('UPDATE appStatus SET personas = ? WHERE channelID = ?');
-        insertPersonas.run(JSON.stringify(defaultData.personas), channelID);
-        console.log(`Personas for channelID: ${channelID} has been successfully restored to default.\n`);
+        const updateStatement = db.prepare(`UPDATE appStatus SET ${column} = ? WHERE channelID = ?`);
+        if (column === 'personas') updateStatement.run(JSON.stringify(defaultData.personas), channelID);
+        if (column === 'formSettings') updateStatement.run(JSON.stringify(defaultData.formSettings), channelID);
+        console.log(`${toTitleCase(column)} for channelID: ${channelID} has been successfully restored to default.\n`);
     } catch (error) {
         console.error(`ERROR: ${error}\n`);
     };
@@ -390,5 +391,5 @@ module.exports = {
     checkColumn,
     channelExists,
     checkCurrentPersona,
-    restoreDefaultPersonas
+    restoreDefault
 };

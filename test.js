@@ -102,7 +102,6 @@ const cid = '1170253143767011409';
 // console.log(db.updateData(cid, 'currentPersona', 'Default'));
 // console.log(db.deleteData('id', cid));
 // console.log(db.deleteData(null, 'all'));
-// db.restoreDefaultPersonas(cid);
 const deleteTestPersonas = (x) => {
     for (let i = 1; i <= x; i++) {
         const name = `Test${i}`;
@@ -115,7 +114,7 @@ const getCurrentScheduler = db.readDataBy('id', cid).formSettings.scheduler;
 const getCurrentRefiner = db.readDataBy('id', cid).formSettings.refiner;
 const scheduler = schemaFields.scheduler;
 const refiner = schemaFields.refiner;
-console.log(db.editJSONData('formSettings', 'update', cid, 'refiner', getCurrentRefiner, null, refiner[0]));
+// console.log(db.editJSONData('formSettings', 'update', cid, 'refiner', getCurrentRefiner, null, refiner[0]));
 // db.updateData(cid, 'currentPersona', 'Test22');
 
 // const addNewStmt = db.editJSONData('insert', cid, 'Testing', description);
@@ -126,7 +125,8 @@ console.log(db.editJSONData('formSettings', 'update', cid, 'refiner', getCurrent
 // }
 
 // console.log(db.readDataBy('id', cid));
-console.log(/*`${getCurrentScheduler}\n${getCurrentrefiner}\n`,*/ db.readJSONData('formSettings', cid));
+// db.restoreDefault('formSettings', cid);
+// console.log(/*`${getCurrentScheduler}\n${getCurrentrefiner}\n`,*/ db.readJSONData('formSettings', cid));
 
 // const channelPersonas = db.readJSONData('personas', cid);
 // const getCurrentPersona = db.readDataBy('id', cid).currentPersona;

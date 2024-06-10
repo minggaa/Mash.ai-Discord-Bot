@@ -147,11 +147,11 @@ function dimensionStandards(model, w, h) {
     };
     
     dimensions = width < minDimension || height < minDimension 
-        ? (isValid = true, format(minDimension))
-        : (isValid = false, format(width, height));
+        ? (isValid = false, format(minDimension))
+        : (isValid = true, format(width, height));
     isValid
-        ? console.log(`\nInvalid dimensions: ${width}x${height}\n\nUpdated dimensions:`)
-        : console.log(`\nValid dimensions: ${dimensions}\n`);
+        ? console.log(`\nValid dimensions:`, dimensions, '\n')
+        : console.log(`\nInvalid dimensions: ${width}x${height}\n\nUpdated dimensions:`);
     console.log(`${getModelName(model)}:`, dimensions, '\n');
 
     return dimensions;

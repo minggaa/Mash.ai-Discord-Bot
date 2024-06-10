@@ -47,14 +47,14 @@ module.exports = {
 
         // To fetch the latest persona data and current persona.
         function fetchPersonaData() {
-            channelPersonas = db.readPersona(channelID);
+            channelPersonas = db.readJSONData('personas', channelID);
             getCurrentPersona = db.readDataBy('id', channelID).currentPersona;
         };
 
         fetchPersonaData();
 
         // To ensure that the channel's current persona is not a value that doesn't exist in the DB.
-        const checkCurrentPersona = db.checkCurrentPersona(channelID, getCurrentPersona);
+        const checkCurrentPersona = db.checkCurrentPersona('personas', channelID, getCurrentPersona);
         checkCurrentPersona;
 
         // Update the OpenAI API bot with the latest change in persona.
@@ -183,7 +183,7 @@ module.exports = {
             if (state === 'update') {
                 setInteraction(true);
                 fetchPersonaData();
-                populateInteraction(db.readPersona(channelID));
+                populateInteraction(db.readJSONData('personas', channelID));
 
                 // To check if persona operations is successful or not, if not then make sure to not update with updated value as it's falsy.
                 if (isUpdateValid && isUpdateValid !== true) { checkCurPersona = getCurrentPersona };
@@ -343,7 +343,7 @@ module.exports = {
                         };
                         
                         if (modalId === `newPersonaModal-${interaction.id}`) {
-                            const addNewStmt = db.editPersona('insert', channelID, personaNameValue, personaDescriptionValue);
+                            const addNewStmt = db.editJSONData('personas', 'insert', channelID, personaNameValue, personaDescriptionValue);
 
                             if (addNewStmt === true) {
                                 embedReply(1, `Persona '${personaNameValue}' has been successfully ${italic('created')}:\n`, 'default');
@@ -354,7 +354,7 @@ module.exports = {
                         };
 
                         if (modalId === `editPersonaModal-${interaction.id}`) {
-                            const editStmt = db.editPersona('update', channelID, getCurrentPersona, channelPersonas[getCurrentPersona], personaNameValue, personaDescriptionValue);
+                            const editStmt = db.editJSONData('personas', 'update', channelID, getCurrentPersona, channelPersonas[getCurrentPersona], personaNameValue, personaDescriptionValue);
                             
                             if (editStmt === true) {
                                 embedReply(1, `Persona '${getCurrentPersona}' has been successfully ${italic('edited')} to:\n`, 'default');
@@ -368,7 +368,7 @@ module.exports = {
                             const deletePersonaValue = modalInteraction.fields.getTextInputValue('deletePersonaInput').toLowerCase();
                             
                             if (bot.yesInputs.includes(deletePersonaValue)) {
-                                const deleteStmt = db.editPersona('delete', channelID, getCurrentPersona);
+                                const deleteStmt = db.editJSONData('personas', 'delete', channelID, getCurrentPersona);
 
                                 if (deleteStmt === true) {
                                     embedReply(1, `Persona '${getCurrentPersona}' has been successfully ${italic('deleted')}:\n`, 'default');

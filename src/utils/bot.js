@@ -14,7 +14,10 @@ const path = require('path');
 const { OpenAI } = require('openai');
 
 const db = require('./database.js');
+
 const config = require('../../botConfig.json');
+const models = config.GenerationModels;
+const imageModels = models.ImageModels;
 
 // Create new Client instance.
 const client = new Client({ intents: ['Guilds', 'GuildMembers', 'GuildMessages', 'MessageContent'] });
@@ -35,6 +38,10 @@ const colors = {
     successColor: 0x5db77b,
     failureColor: 0xc13748,
     timeoutColor: 0x80687f
+};
+
+const toTitleCase = (input) => {
+    return input.charAt(0).toUpperCase() + input.slice(1);
 };
 
 // Check if bot has ever been used in this channel by its existence in the db.
@@ -69,12 +76,14 @@ const buttonBuilder = (customId, label, style, emoji) => {
 };
         
 // Handle error message printing.
+let errorLog = [];
 const errorEmbed = (errorLog, title, description) => {
     const splitErrorLog = errorLog ? errorLog.join('\n\n') : '';
     const errorPrinting = splitErrorLog ? '```' + splitErrorLog + '```' : '';
     title = title || 'Sorry! We\'ve encountered some error(s).';
     description = description ? description + '\n' + errorPrinting : errorPrinting;
 
+    errorLog.length = 0;
     return new EmbedBuilder()
         .setTitle(title)
         .setDescription(description)
@@ -92,6 +101,60 @@ function startTimer(timeCreated) {
 
     // Print the timer
     return `${timeDiff} ms`;
+};
+
+// Handles making sure the input width and height is valid to run the image generation.
+function dimensionStandards(model, w, h) {
+    if (!Object.values(imageModels).includes(model)) return console.log('Invalid model\n');
+
+    let minDimension;
+    let dimensions;
+    let isValid;
+    let size = typeof w === 'string' ? w : w;
+    let sizeSplit = typeof w === 'string' ? size.split('x') : NaN;
+    let width = typeof w === 'number' ? w : parseInt(sizeSplit[0]);
+    let height = typeof w === 'number' ? h : parseInt(sizeSplit[1]);
+
+    const getModelName = () => {
+        return Object.keys(imageModels).find(key => imageModels[key] === model.toString());
+    };
+
+    const format = (w, h = w) => {
+        if (model === imageModels['Dall·E 3'] || model === imageModels['Dall·E 2']) {
+            return `${w}x${h}`;
+        } else {
+            return {
+                width: w,
+                height: h
+            };
+        };
+    };
+    
+    switch(model) {
+        case imageModels['Dall·E 3']:
+            minDimension = 1024;
+            break;
+        case imageModels['Dall·E 2']:
+            minDimension = 512;
+            break;
+        case imageModels['Stable Diffusion']:
+        case imageModels['DreamShaper']:
+            minDimension = 768;
+            break;
+        default:
+            console.log(`Invalid model: ${model}\n`);
+            return;
+    };
+    
+    dimensions = width < minDimension || height < minDimension 
+        ? (isValid = true, format(minDimension))
+        : (isValid = false, format(width, height));
+    isValid
+        ? console.log(`\nInvalid dimensions: ${width}x${height}\n\nUpdated dimensions:`)
+        : console.log(`\nValid dimensions: ${dimensions}\n`);
+    console.log(`${getModelName(model)}:`, dimensions, '\n');
+
+    return dimensions;
 };
 
 // Determine the scale factor for image upscaling based on width (& height).
@@ -142,10 +205,13 @@ module.exports = {
     noInputs,
     posStringInputs,
     colors,
+    errorLog,
+    toTitleCase,
     checkEnabled,
     buttonBuilder,
     errorEmbed,
     startTimer,
+    dimensionStandards,
     scaleCalc,
     imageDownload,
 };

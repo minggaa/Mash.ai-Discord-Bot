@@ -1,3 +1,3 @@
 -- SQLite
-PRAGMA table_info('botStatus');
-SELECT * FROM botStatus;
+PRAGMA table_info('appStatus');
+SELECT * FROM appStatus;

@@ -7,7 +7,9 @@ const bot = require('./src/utils/bot.js');
 const config = require('./botConfig.json');
 const pModals = config.personaModalsText;
 const models = config.GenerationModels;
+const imageModels = models.ImageModels;
 const imageSize = config.ImageSizes;
+const schemaFields = config.ReplicateSchemaField;
 
 const sampleData = [
     { url: 'https://pngfre.com/wp-content/uploads/transparent-cat-by-pngfre-56-1.png', },
@@ -96,7 +98,7 @@ const cid = '1170253143767011409';
 // db.insertNewData(cid, 0);
 // console.log(db.checkColumn('currentModel', cid));
 // console.log(db.channelExists(cid));
-// console.log(db.readPersona(cid, 'Support'));
+// console.log(db.readJSONData('formSettings', cid, 'refine'));
 // console.log(db.updateData(cid, 'currentPersona', 'Default'));
 // console.log(db.deleteData('id', cid));
 // console.log(db.deleteData(null, 'all'));
@@ -104,14 +106,19 @@ const cid = '1170253143767011409';
 const deleteTestPersonas = (x) => {
     for (let i = 1; i <= x; i++) {
         const name = `Test${i}`;
-        db.editPersona('delete', cid, name, description);
+        db.editJSONData('delete', cid, name, description);
     };
 };
 // deleteTestPersonas(20);
-// console.log(db.editPersona('update', cid, 'Support', description, 'Salesperson'));
+
+const getCurrentScheduler = db.readDataBy('id', cid).formSettings.scheduler;
+const getCurrentRefine = db.readDataBy('id', cid).formSettings.refine;
+const scheduler = schemaFields.scheduler;
+const refine = schemaFields.refine;
+console.log(db.editJSONData('formSettings', 'update', cid, 'refine', getCurrentRefine, null, refine[0]));
 // db.updateData(cid, 'currentPersona', 'Test22');
 
-// const addNewStmt = db.editPersona('insert', cid, 'Testing', description);
+// const addNewStmt = db.editJSONData('insert', cid, 'Testing', description);
 // if (addNewStmt == true) {
 //     console.log(`Your persona has been successfully created.`);
 // } else {
@@ -119,9 +126,12 @@ const deleteTestPersonas = (x) => {
 // }
 
 // console.log(db.readDataBy('id', cid));
+console.log(/*`${getCurrentScheduler}\n${getCurrentRefine}\n`,*/ db.readJSONData('formSettings', cid));
 
-// const channelPersonas = db.readPersona(cid);
+// const channelPersonas = db.readJSONData('personas', cid);
 // const getCurrentPersona = db.readDataBy('id', cid).currentPersona;
+
+
 let selectMenuObj = [];
 
 function populateInteractions() {
@@ -260,6 +270,9 @@ const checkInput = (type, input) => {
     };
 };
 // console.log(`\nOutput of input '${x}': ${checkInput(2, x)}\nType of '${x}': ${typeof x}\n`);
+
+// How do I want my dimensions data to be returned?
+// bot.dimensionStandards(imageModels['Dall·E 2'], '512x512');
 
 module.exports = {
     sampleData,

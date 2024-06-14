@@ -149,9 +149,7 @@ function dimensionStandards(model, w, h) {
     dimensions = width < minDimension || height < minDimension 
         ? (isValid = false, format(minDimension))
         : (isValid = true, format(width, height));
-    isValid
-        ? console.log(`\nValid dimensions:`, dimensions, '\n')
-        : console.log(`\nInvalid dimensions: ${width}x${height}\n\nUpdated dimensions:`);
+    if (!isValid) console.log(`\nInvalid dimensions: ${width}x${height}\n\nUpdated dimensions:`);
     console.log(`${getModelName(model)}:`, dimensions, '\n');
 
     return dimensions;
@@ -178,24 +176,59 @@ function scaleCalc(width, height) {
 };
 
 // To download image as PNG from url (for variation generation with OpenAI).
-async function imageDownload(imageUrl) {
+async function imageDownload(reason, imageUrl, channelID, messageID) {
     // Fetch the image data
     const response = await fetch(imageUrl);
     const imageArrayBuffer = await response.arrayBuffer();
     const imageBuffer = Buffer.from(imageArrayBuffer);
 
     // Create the folder if it doesn't exist
-    const folderPath = path.join(__dirname, '..', 'assets', 'variations');
+    const folderPath = path.join(__dirname, '..', 'log', 'images', channelID);
     if (!fs.existsSync(folderPath)) {
         fs.mkdirSync(folderPath, { recursive: true });
     };
 
-    // Save the image as a PNG file
-    const fileName = `${path.basename(imageUrl, path.extname(imageUrl))}-${Date.now()}.png`;
-    const imagePath = path.join(folderPath, fileName);
+    // Remove the base URL from the imageUrl
+    const url = new URL(imageUrl);
+    const pathWithoutProtocolUrl = (url.host + url.pathname + url.search + url.hash).replace(/\/|-/g, '_');
 
-    fs.writeFileSync(imagePath, imageBuffer);
-    return fs.createReadStream(imagePath)
+    try {
+        let fileName, imagePath, name;
+
+        // Check if the imageUrl already exists in the folder
+        const existingFiles = fs.readdirSync(folderPath);
+        const existingImageUrl = existingFiles.find(file => {
+            name = file.split('-');
+            // console.log(name);
+            return name[1].includes(pathWithoutProtocolUrl) ? true : false;
+        });
+    
+        // Check for existing saved images url file name, to either update old file with latest gen & ID, or save if does not exist.
+        !existingImageUrl
+            ? fileName = `${messageID}-${pathWithoutProtocolUrl}`
+            : fileName = `${name[0]}-${pathWithoutProtocolUrl}`;
+        imagePath = path.join(folderPath, fileName);
+    
+        // If the file exists, update it with the new image data
+        fs.writeFileSync(imagePath, imageBuffer);
+
+        // If existing file is overrided, change the file name to latest messageID
+        if (existingImageUrl) {
+            const updatedFileName = `${messageID}-${pathWithoutProtocolUrl}`;
+            const updatedPathName = path.join(folderPath, updatedFileName);
+            fs.rename(imagePath, updatedPathName, (error) => {
+                if (error) console.error('RENAMING ERROR:\n', error);
+                else console.log('Rename complete!\n');
+            });
+            imagePath = updatedPathName;
+            fileName = updatedFileName;
+        };
+
+        if (reason === 'getReadStream') return fs.createReadStream(imagePath);
+        if (reason === 'getFileName') return fileName;
+    } catch (error) {
+        console.error(error);
+    };
 };
 
 module.exports = {

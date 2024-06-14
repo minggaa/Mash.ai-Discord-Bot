@@ -274,6 +274,15 @@ const checkInput = (type, input) => {
 // How do I want my dimensions data to be returned?
 // bot.dimensionStandards(imageModels['Dall·E 2'], '512x512');
 
+async function main() {
+    // const url = 'https://replicate.delivery/pbxt/ab8C6w6pJVYjMN9obS0q6Lt9HwHVSKOIkhpOdaf2OuPG8weSA/out-0.png';
+    // const msgID = 12345678;
+    // const download = await bot.imageDownload(url, cid, msgID.toString());
+    // return download
+};
+
+main();
+
 module.exports = {
     sampleData,
     sampleData2,

@@ -177,22 +177,25 @@ function scaleCalc(width, height) {
 
 // To download image as PNG from url (for variation generation with OpenAI).
 async function imageDownload(reason, imageUrl, channelID, messageID) {
-    // Fetch the image data
-    const response = await fetch(imageUrl);
-    const imageArrayBuffer = await response.arrayBuffer();
-    const imageBuffer = Buffer.from(imageArrayBuffer);
-
-    // Create the folder if it doesn't exist
-    const folderPath = path.join(__dirname, '..', 'log', 'images', channelID);
-    if (!fs.existsSync(folderPath)) {
-        fs.mkdirSync(folderPath, { recursive: true });
-    };
-
-    // Remove the base URL from the imageUrl
-    const url = new URL(imageUrl);
-    const pathWithoutProtocolUrl = (url.host + url.pathname + url.search + url.hash).replace(/\/|-/g, '_');
-
     try {
+        // Fetch the image data
+        const response = await fetch(imageUrl);
+        const imageArrayBuffer = await response.arrayBuffer();
+        const imageBuffer = Buffer.from(imageArrayBuffer);
+
+        // Create the folder if it doesn't exist
+        const folderPath = path.join(__dirname, '..', 'log', 'images', channelID);
+        if (!fs.existsSync(folderPath)) {
+            fs.mkdirSync(folderPath, { recursive: true });
+        };
+
+        // Remove the base URL from the imageUrl
+        const url = new URL(imageUrl);
+        const getUrlPath = url.href.length > 256 
+            ? url.pathname.substring(url.pathname.lastIndexOf('/'))
+            : url.host + url.pathname + url.search + url.hash;
+        const cleanPath = getUrlPath.replace(/\/|-/g, '_');
+
         let fileName, imagePath, name;
 
         // Check if the imageUrl already exists in the folder
@@ -200,13 +203,13 @@ async function imageDownload(reason, imageUrl, channelID, messageID) {
         const existingImageUrl = existingFiles.find(file => {
             name = file.split('-');
             // console.log(name);
-            return name[1].includes(pathWithoutProtocolUrl) ? true : false;
+            return name[1].includes(cleanPath) ? true : false;
         });
     
         // Check for existing saved images url file name, to either update old file with latest gen & ID, or save if does not exist.
         !existingImageUrl
-            ? fileName = `${messageID}-${pathWithoutProtocolUrl}`
-            : fileName = `${name[0]}-${pathWithoutProtocolUrl}`;
+            ? fileName = `${messageID}-${cleanPath}`
+            : fileName = `${name[0]}-${cleanPath}`;
         imagePath = path.join(folderPath, fileName);
     
         // If the file exists, update it with the new image data
@@ -214,11 +217,14 @@ async function imageDownload(reason, imageUrl, channelID, messageID) {
 
         // If existing file is overrided, change the file name to latest messageID
         if (existingImageUrl) {
-            const updatedFileName = `${messageID}-${pathWithoutProtocolUrl}`;
+            const updatedFileName = `${messageID}-${cleanPath}`;
             const updatedPathName = path.join(folderPath, updatedFileName);
             fs.rename(imagePath, updatedPathName, (error) => {
-                if (error) console.error('RENAMING ERROR:\n', error);
-                else console.log('Rename complete!\n');
+                if (error) {
+                    console.error('RENAMING ERROR:\n', error);
+                    errorLog.push(error);
+                    return;
+                } else console.log('Rename complete!\n');
             });
             imagePath = updatedPathName;
             fileName = updatedFileName;
@@ -227,7 +233,9 @@ async function imageDownload(reason, imageUrl, channelID, messageID) {
         if (reason === 'getReadStream') return fs.createReadStream(imagePath);
         if (reason === 'getFileName') return fileName;
     } catch (error) {
-        console.error(error);
+        console.error('IMAGE DOWNLOAD ERROR:\n', error);
+        errorLog.push(error);
+        return;
     };
 };
 

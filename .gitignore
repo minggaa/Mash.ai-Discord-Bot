@@ -2,7 +2,6 @@ _Sample
 node_modules
 .eslintrc.json
 .env
--- SQLite.sql
-test.js
+auxiliary
 src/assets/variations/*
 src/log/images/*

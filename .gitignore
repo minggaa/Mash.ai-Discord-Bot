@@ -1,7 +1,8 @@
 _Sample
-Diagrams
 node_modules
 .eslintrc.json
 .env
+-- SQLite.sql
+test.js
 src/assets/variations/*
 src/log/images/*

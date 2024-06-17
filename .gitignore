@@ -2,6 +2,7 @@ _Sample
 node_modules
 .eslintrc.json
 .env
+mash.db
 auxiliary
 src/assets/variations/*
 src/log/images/*

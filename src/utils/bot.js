@@ -8,7 +8,7 @@ const {
     EmbedBuilder,
     ButtonBuilder,
     ButtonStyle,
-    bold, italic, strikethrough } = require('discord.js');
+    bold, italic, strikethrough, inlineCode} = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const { OpenAI } = require('openai');
@@ -64,11 +64,14 @@ function checkEnabled(channelID) {
 };
 
 // Create button builder.
-const buttonBuilder = (customId, label, style, emoji) => {
+const buttonBuilder = (customId, label, style, emoji, interacted) => {
+    let buttonStyle = style || ButtonStyle.Secondary;
+    if (interacted && interacted === customId) buttonStyle = ButtonStyle.Primary;
+
     const button = new ButtonBuilder()
         .setCustomId(customId)
         .setLabel(label)
-        .setStyle(style);
+        .setStyle(buttonStyle);
 
     if (emoji) button.setEmoji(emoji);
 
@@ -83,12 +86,31 @@ const errorEmbed = (errorLog, title, description) => {
     title = title || 'Sorry! We\'ve encountered some error(s).';
     description = description ? description + '\n' + errorPrinting : errorPrinting;
 
+    // Empty error logs if previous error has been logged.
     errorLog.length = 0;
     return new EmbedBuilder()
         .setTitle(title)
         .setDescription(description)
         .setColor(colors.failureColor)
         .setTimestamp();
+};
+                                
+// Return follow up embed reply if encountered an error.
+const inputErrorEmbed = (value, description) => {
+    const errorMessage = `You entered: ${bold(inlineCode(value))}\n` + description;
+    
+    // Empty error logs if previous error has been logged.
+    if (errorLog.length > 0) errorLog.length = 0;
+    return {
+        embeds: [
+            new EmbedBuilder({
+                title: `Sorry but you entered an invalid input!`,
+                description: errorMessage,
+                color: colors.failureColor,
+            }).setTimestamp()
+        ],
+        ephemeral: true,
+    };
 };
 
 // Calculate time difference in ms.
@@ -104,23 +126,23 @@ function startTimer(timeCreated) {
 };
 
 // Handles making sure the input width and height is valid to run the image generation.
-function dimensionStandards(model, w, h) {
-    if (!Object.values(imageModels).includes(model)) return console.log('Invalid model\n');
+function dimensionStandards(model, w, h, isInitial) {
+    if (!Object.values(imageModels).includes(model)) {
+        console.log('Invalid model\n');
+        return errorLog.push('Invalid model:', model);
+    };
 
     let minDimension;
     let dimensions;
     let isValid;
-    let size = typeof w === 'string' ? w : w;
-    let sizeSplit = typeof w === 'string' ? size.split('x') : NaN;
-    let width = typeof w === 'number' ? w : parseInt(sizeSplit[0]);
-    let height = typeof w === 'number' ? h : parseInt(sizeSplit[1]);
+    let errorMessage = '';
 
     const getModelName = () => {
         return Object.keys(imageModels).find(key => imageModels[key] === model.toString());
     };
 
-    const format = (w, h = w) => {
-        if (model === imageModels['Dall·E 3'] || model === imageModels['Dall·E 2']) {
+    const format = (w, h = w, toString) => {
+        if (model === imageModels['Dall·E 3'] || model === imageModels['Dall·E 2'] || toString) {
             return `${w}x${h}`;
         } else {
             return {
@@ -145,14 +167,70 @@ function dimensionStandards(model, w, h) {
             console.log(`Invalid model: ${model}\n`);
             return;
     };
-    
-    dimensions = width < minDimension || height < minDimension 
-        ? (isValid = false, format(minDimension))
-        : (isValid = true, format(width, height));
-    if (!isValid) console.log(`\nInvalid dimensions: ${width}x${height}\n\nUpdated dimensions:`);
-    console.log(`${getModelName(model)}:`, dimensions, '\n');
+
+    if (isInitial || !w) {
+        return format(minDimension, minDimension, true);
+    } else {
+        let size = typeof w === 'string' ? w : w;
+        let sizeSplit = typeof w === 'string' ? size.split('x') : NaN;
+        let width = typeof w === 'number' ? w : parseInt(sizeSplit[0]);
+        let height = typeof w === 'number' ? h : parseInt(sizeSplit[1]);
+
+        dimensions = width < minDimension || height < minDimension 
+            ? (isValid = false, format(minDimension))
+            : (isValid = true, format(width, height));
+        
+        // Display input error embed if input is invalid.
+        if (!isValid) {
+            const readOnlyDimensions = typeof dimensions === 'object' ? `${dimensions.width}x${dimensions.height}` : dimensions;
+            errorMessage += `${getModelName(model)} model ${bold(inlineCode('does NOT allow'))} sizes below ${bold(inlineCode(minDimension))}px.\n`;
+            errorMessage += `\nI've adjusted the size to '${bold(inlineCode(readOnlyDimensions))}px' for this run.`;
+            errorLog.push(errorMessage);
+            // console.log(`\nInvalid dimensions: ${width}x${height}\nUpdated dimensions:`);
+        };
+    };
+    // console.log(`${getModelName(model)}:`, dimensions, '\n');
 
     return dimensions;
+};
+
+async function outputNumStandards(model, numOutputs, isInitial) {
+    let max;
+    try {
+        switch(model) {
+            case imageModels['Dall·E 3']:
+                max = 1;
+                break;
+            case imageModels['Dall·E 2']:
+            case imageModels['Stable Diffusion']:
+            case imageModels['DreamShaper']:
+                max = 4;
+                break;
+            default:
+                throw new Error(`Invalid model: ${model}\n`);
+        };
+
+        // Display input error embed if input is invalid.
+        if (numOutputs > max) {
+            if (!isInitial) {
+                let errorMessage = '';
+
+                if (model === imageModels['Dall·E 3']) errorMessage += `OpenAI's 'Dall·E 3' model ${bold(inlineCode('does NOT allow'))} more than ${bold(inlineCode(max))} output per generation.\n`;
+                else errorMessage += `Expected an input between '1 to ${max}'\n`;
+
+                errorMessage += `\nI've changed your number of output to '${bold(inlineCode('1'))}' for this run, you can change the number of outputs in '${bold(inlineCode('EditForm'))}'.`;
+                errorLog.push(errorMessage);
+            };
+
+            return 1;
+        };
+
+        return numOutputs;
+    } catch (error) {
+        console.error('NUMBER OF OUTPUT INVALID:\n', error);
+        errorLog.push(error);
+        return;
+    };
 };
 
 // Determine the scale factor for image upscaling based on width (& height).
@@ -251,8 +329,10 @@ module.exports = {
     checkEnabled,
     buttonBuilder,
     errorEmbed,
+    inputErrorEmbed,
     startTimer,
     dimensionStandards,
+    outputNumStandards,
     scaleCalc,
     imageDownload,
 };

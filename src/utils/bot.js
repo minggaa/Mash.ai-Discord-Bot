@@ -44,7 +44,7 @@ const toTitleCase = (input) => {
     return input.charAt(0).toUpperCase() + input.slice(1);
 };
 
-const getModelName = () => {
+const getModelName = (model) => {
     return Object.keys(imageModels).find(key => imageModels[key] === model.toString());
 };
 

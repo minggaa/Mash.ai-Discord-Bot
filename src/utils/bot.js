@@ -44,6 +44,10 @@ const toTitleCase = (input) => {
     return input.charAt(0).toUpperCase() + input.slice(1);
 };
 
+const getModelName = () => {
+    return Object.keys(imageModels).find(key => imageModels[key] === model.toString());
+};
+
 // Check if bot has ever been used in this channel by its existence in the db.
 function checkEnabled(channelID) {
     const retrieveRow = db.readDataBy('id', channelID);
@@ -137,10 +141,6 @@ function dimensionStandards(model, w, h, isInitial) {
     let isValid;
     let errorMessage = '';
     let toString;
-
-    const getModelName = () => {
-        return Object.keys(imageModels).find(key => imageModels[key] === model.toString());
-    };
 
     const format = (w, h = w, toString) => {
         if (model === imageModels['Dall·E 3'] || model === imageModels['Dall·E 2'] || toString) {
@@ -330,6 +330,7 @@ module.exports = {
     colors,
     errorLog,
     toTitleCase,
+    getModelName,
     checkEnabled,
     buttonBuilder,
     errorEmbed,

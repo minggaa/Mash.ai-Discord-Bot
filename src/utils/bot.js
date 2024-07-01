@@ -136,6 +136,7 @@ function dimensionStandards(model, w, h, isInitial) {
     let dimensions;
     let isValid;
     let errorMessage = '';
+    let toString;
 
     const getModelName = () => {
         return Object.keys(imageModels).find(key => imageModels[key] === model.toString());
@@ -155,13 +156,16 @@ function dimensionStandards(model, w, h, isInitial) {
     switch(model) {
         case imageModels['Dall·E 3']:
             minDimension = 1024;
+            toString = true;
             break;
         case imageModels['Dall·E 2']:
             minDimension = 512;
+            toString = true;
             break;
         case imageModels['Stable Diffusion']:
         case imageModels['DreamShaper']:
             minDimension = 768;
+            toString = false;
             break;
         default:
             console.log(`Invalid model: ${model}\n`);
@@ -169,7 +173,7 @@ function dimensionStandards(model, w, h, isInitial) {
     };
 
     if (isInitial || !w) {
-        return format(minDimension, minDimension, true);
+        return format(minDimension, minDimension, toString);
     } else {
         let size = typeof w === 'string' ? w : w;
         let sizeSplit = typeof w === 'string' ? size.split('x') : NaN;

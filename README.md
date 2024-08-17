@@ -40,11 +40,11 @@ Make sure to fulfil each requirement or else your Mash would not be working as i
 2. Give your bot a name (make sure its 'Mash') and agree to the T&C.
 3. Go to `Bot` > Token > and `Reset Token` to get the application token for your new Mash boy.
 
-    <img width="65%" alt="Discord Token Example" src="https://github.com/user-attachments/assets/f8670fce-c72e-45f3-a6ab-1268d9ade2fa">
+    <img width="80%" alt="Discord Token Example" src="https://github.com/user-attachments/assets/f8670fce-c72e-45f3-a6ab-1268d9ade2fa">
 
 4. Navigate to the downloaded source file > go to `.env.example` and rename it to `.env` > Store your bot token under `CLIENT_TOKEN`.
     
-    <img width="25%" alt="dotenv Discord Client_Token storage Example" src="https://github.com/user-attachments/assets/3d3c2376-a0d1-4bb1-9b64-773006634fc4">
+    <img width="35%" alt="dotenv Discord Client_Token storage Example" src="https://github.com/user-attachments/assets/3d3c2376-a0d1-4bb1-9b64-773006634fc4">
 
 5. Make sure to turn MESSAGE CONTENT INTENT `ON`.
 6. Go to `OAuth2` > `OAuth2 URL Generator` > Select the `bot` and `applications.commands` options > Then configure all the necessary permissions for your Mash (You can set `Administrator` to allow all permissions).

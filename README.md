@@ -40,7 +40,7 @@ Make sure to fulfil each requirement or else your Mash would not be working as i
 2. Give your bot a name (make sure its 'Mash') and agree to the T&C.
 3. Go to `Bot` > Token > and `Reset Token` to get the application token for your new Mash boy.
     
-    ![Discord Token Example](https://github.com/user-attachments/assets/2f5e88fa-4cec-4d65-a2d4-e707a1753e0c)
+    ![Discord Token Example](https://github.com/user-attachments/assets/f8670fce-c72e-45f3-a6ab-1268d9ade2fa)
 
 4. Navigate to the downloaded source file > go to `.env.example` and rename it to `.env` > Store your bot token under `CLIENT_TOKEN`.
     
@@ -91,10 +91,10 @@ Make sure to fulfil each requirement or else your Mash would not be working as i
 
     | Input Fields | Description |
     | :----------- | :---------- |
-    | `prompt`     | Instructions/prompt to generate image. |
+    | `prompt`     | Instructions/prompts to generate image. |
     | `number`     | Number of images to generate. |
     | `size`       | Select or Enter a size for your image. <br><sub>*(Seperate width and height with an x, e.g: 1080x1080)*.</sub> |
-    | `negprompt`  | Negative Prompts to avoid in your image. <span style="color:#a30b57">**\***</span> |
+    | `negprompt`  | Negative Prompts, things to avoid generating in your image. <span style="color:#a30b57">**\***</span> |
     | `scheduler`  | Select a scheduler. <span style="color:#a30b57">**\***</span> |
     | `refiner`    | Select a refiner. <span style="color:#a30b57">**\***</span> |
 

@@ -57,8 +57,8 @@ module.exports = {
 
         // Check for the current selected model type, then update current model.
         function fetchModelType(checkAllTypes) {
-            currentChatModel = db.readDataBy('id', channelID).currentChatModel;
-            currentImageModel = db.readDataBy('id', channelID).currentImageModel;
+            currentChatModel = db.readDataBy('appStatus', 'id', channelID).currentChatModel;
+            currentImageModel = db.readDataBy('appStatus', 'id', channelID).currentImageModel;
 
             if (checkAllTypes) {
                 currentChatModel;
@@ -259,14 +259,14 @@ module.exports = {
                 await interaction.deferUpdate();
                 // If user unselects, revert to default model
                 if (!interaction.values.length) {
-                    db.updateData(channelID, getCurrentModelType, chatModels['GPT-4 Turbo']);
+                    db.updateData('appStatus', channelID, getCurrentModelType, chatModels['GPT-4 Turbo']);
                     fetchModelType();
                     await updateReply('collecting', `You have emptied your selection, model reverted to ${getModelKey(getCurrentModel)}.`, getCurrentModel);
                     return;
                 };
                 
                 // Updates the currentModel with the user selected model
-                db.updateData(channelID, getCurrentModelType, interaction.values.toString());
+                db.updateData('appStatus', channelID, getCurrentModelType, interaction.values.toString());
                 fetchModelType();
                 await updateReply('collecting', `You have successfully selected '${bold(getModelKey(interaction.values))}'`, interaction.values);
             } else {

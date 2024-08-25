@@ -48,7 +48,7 @@ module.exports = {
         // To fetch the latest persona data and current persona.
         function fetchPersonaData() {
             channelPersonas = db.readJSONData('personas', channelID);
-            getCurrentPersona = db.readDataBy('id', channelID).currentPersona;
+            getCurrentPersona = db.readDataBy('appStatus', 'id', channelID).currentPersona;
         };
 
         fetchPersonaData();
@@ -230,7 +230,7 @@ module.exports = {
                 await interaction.deferUpdate();
                 // check if the user did not select any options from the menu
                 if (!interaction.values.length) {
-                    db.updateData(channelID, 'currentPersona', defaultPersona);
+                    db.updateData('appStatus', channelID, 'currentPersona', defaultPersona);
                     fetchPersonaData();
                     pushConversation(getCurrentPersona);
                     await updateReply('collecting', `You have emptied your selection, persona reverted to Default.`, getCurrentPersona);
@@ -238,7 +238,7 @@ module.exports = {
                 };
                 
                 // Updates the currentPersona with the user selected persona
-                db.updateData(channelID, 'currentPersona', interaction.values.toString());
+                db.updateData('appStatus', channelID, 'currentPersona', interaction.values.toString());
                 fetchPersonaData();
                 pushConversation(getCurrentPersona);
                 await updateReply('collecting', `You have successfully selected '${bold(interaction.values)}: ${bold(channelPersonas[interaction.values])}'`, interaction.values);

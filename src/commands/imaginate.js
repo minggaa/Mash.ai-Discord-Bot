@@ -139,7 +139,7 @@ module.exports = {
     
         // Fetches the latest state of current image model.
         const fetchCurrentImageModel = () => {
-            getCurrentImageModel = db.readDataBy('id', channelID).currentImageModel;
+            getCurrentImageModel = db.readDataBy('appStatus', 'id', channelID).currentImageModel;
             return getCurrentImageModel;
         };
         fetchCurrentImageModel();
@@ -282,7 +282,7 @@ module.exports = {
 
             // Fetches the latest form settings values.
             const fetchFormSettings = (property) => {
-                const formSettings = db.readDataBy('id', channelID).formSettings;
+                const formSettings = db.readDataBy('appStatus', 'id', channelID).formSettings;
 
                 if (property) return formSettings[property];
 

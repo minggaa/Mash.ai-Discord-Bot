@@ -50,7 +50,7 @@ const getModelName = (model) => {
 
 // Check if bot has ever been used in this channel by its existence in the db.
 function checkEnabled(channelID) {
-    const retrieveRow = db.readDataBy('id', channelID);
+    const retrieveRow = db.readDataBy('appStatus', 'id', channelID);
     const checkRow = retrieveRow ? true : false;
 
     if (!checkRow) {

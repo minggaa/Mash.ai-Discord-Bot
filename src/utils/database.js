@@ -13,12 +13,16 @@ const defaultImageModel = imageModel['Stable Diffusion'];
 const defaultScheduler = schemaFields.scheduler[0];
 const defaultRefiner = schemaFields.refiner[0];
 
+// Table names.
+const tbAppStatus = 'appStatus';
+const tbUsers = 'users';
+
 // Connect to the database.
 const db = new Database('mash.db');
 
 // Prepare database table.
 db.prepare(`
-    CREATE TABLE IF NOT EXISTS appStatus (
+    CREATE TABLE IF NOT EXISTS ${tbAppStatus} (
         channelID VARCHAR(255) NOT NULL PRIMARY KEY,
         isEnabled BOOLEAN DEFAULT 0 NOT NULL,
         personas TEXT NOT NULL,
@@ -30,9 +34,9 @@ db.prepare(`
 `).run();
 
 db.prepare(`
-    CREATE TABLE IF NOT EXISTS userTokens (
+    CREATE TABLE IF NOT EXISTS ${tbUsers} (
         userID VARCHAR(255) NOT NULL PRIMARY KEY,
-        tokensUsed INTEGER DEFAULT 0 NOT NULL
+        tokensUsed VARCHAR(255) NOT NULL
     )
 `).run();
 
@@ -56,21 +60,33 @@ const toTitleCase = (input) => {
 // Writing JSON to the database.
 const insertStatement = (table) => {
     switch (table) {
-        case 'appStatus':
-            db.prepare('INSERT OR IGNORE INTO appStatus (channelID, isEnabled, personas, currentPersona, currentChatModel, currentImageModel, formSettings) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        case 'userTokens':
-            return db.prepare('INSERT OR IGNORE INTO userTokens (userID, tokensUsed) VALUES (?, ?)');
+        case tbAppStatus:
+            db.prepare(`INSERT OR IGNORE INTO ${tbAppStatus} (channelID, isEnabled, personas, currentPersona, currentChatModel, currentImageModel, formSettings) VALUES (?, ?, ?, ?, ?, ?, ?)`);
+        case tbUsers:
+            return db.prepare(`INSERT OR IGNORE INTO ${tbUsers} (userID, tokensUsed) VALUES (?, ?)`);
     }
 };
 
-function restoreDefault(column, channelID) {
+function restoreDefault(table, column, id) {
     try {
-        const updateStatement = db.prepare(`UPDATE appStatus SET ${column} = ? WHERE channelID = ?`);
-        if (column === 'personas') updateStatement.run(JSON.stringify(defaultData.personas), channelID);
-        if (column === 'formSettings') updateStatement.run(JSON.stringify(defaultData.formSettings), channelID);
-        console.log(`${toTitleCase(column)} for channelID: ${channelID} has been successfully restored to default.\n`);
+        let idType;
+        switch (table) {
+            case tbAppStatus:
+                idType = 'channelID';
+                break;
+            case tbUsers:
+                idType = 'userID';
+                break;
+        };
+
+        const updateStatement = db.prepare(`UPDATE ${table} SET ${column} = ? WHERE ${idType} = ?`);
+
+        if (column === 'personas') updateStatement.run(JSON.stringify(defaultData.personas), id);
+        if (column === 'formSettings') updateStatement.run(JSON.stringify(defaultData.formSettings), id);
+
+        return console.log(`${toTitleCase(column)} for ${idType}: ${id} has been successfully restored to default.\n`);
     } catch (error) {
-        console.error(`ERROR: ${error}\n`);
+        return console.error(`ERROR: ${error}\n`);
     };
 };
 
@@ -87,19 +103,19 @@ function tableExists(tableName) {
 
 // CHECK if channelID exists in the db.
 function channelExists(channelID) {
-    const checkStatement = db.prepare('SELECT * FROM appStatus WHERE channelID = ? AND channelID IS NOT NULL').get(channelID);
+    const checkStatement = db.prepare(`SELECT * FROM ${tbAppStatus} WHERE channelID = ? AND channelID IS NOT NULL`).get(channelID);
     return !!checkStatement; // returns true or false
 };
 
 // CHECK if userID exists in the db.
 function userExists(userID) {
-    const checkStatement = db.prepare('SELECT * FROM userTokens WHERE userID = ? AND userID IS NOT NULL').get(userID);
+    const checkStatement = db.prepare(`SELECT * FROM ${tbUsers} WHERE userID = ? AND userID IS NOT NULL`).get(userID);
     return !!checkStatement; // returns true or false
 };
 
 // CHECK if column exists in the db
-function columnExists(column) {
-    const query = db.prepare(`PRAGMA table_info(appStatus);`); // queries to get information on table, including columns
+function columnExists(table, column) {
+    const query = db.prepare(`PRAGMA table_info(${table});`); // queries to get information on table, including columns
     const columns = query.all(); // gets all columns in array of objects
     for (const col of columns) {
         if (col.name === column) {
@@ -116,7 +132,7 @@ function checkColumn(table, column, input) {
     const columnType = checkStatement.columns().map(column => column.type.toLowerCase()); // extracts the data type of the input column
     let inputType;
     
-    if ((typeof input == 'integer' || 'number') && (input == 0 || input <= 1)) {
+    if ((typeof input == 'integer' || 'number') && (input === 0 || input === 1)) {
         inputType = 'boolean';
     } else if (typeof input == 'number') {
         inputType = 'integer';
@@ -126,6 +142,7 @@ function checkColumn(table, column, input) {
 
     // console.log(`${typeof input}\n${columnType}\ninput type: ${inputType}\ncolumn type: ${columnType}`);
     if (inputType != columnType) {
+        console.log(`\n${columnType}\n${inputType}\n`);
         console.log(`ERROR in updating the specified data due to a mismatch of data types in the table column.\n`);
         return false;
     } else {
@@ -137,21 +154,21 @@ function checkColumn(table, column, input) {
 function checkCurrentPersona(column, channelID, personaName, updatePName) {
     if (column === 'formSettings') return;
 
-    const selectStatement = db.prepare(`SELECT ${column} FROM appStatus WHERE channelID = ?`).get(channelID);
+    const selectStatement = db.prepare(`SELECT ${column} FROM ${tbAppStatus} WHERE channelID = ?`).get(channelID);
     const jsonData = JSON.parse(selectStatement.personas);
     
     if (column === 'personas') {
         // Check if the currentPersona exists in the channel's personas.
-        const getCurrentPersona = readDataBy('appStatus', 'id', channelID).currentPersona;
+        const getCurrentPersona = readDataBy(tbAppStatus, 'id', channelID).currentPersona;
         const currentPersona = personaName ? personaName : getCurrentPersona;
 
         if (!jsonData.hasOwnProperty(currentPersona)) {
             if (!jsonData.hasOwnProperty(updatePName)) {
                 console.log(`Existing persona: ${currentPersona} does not exist in the database. Reverting to default.\n`);
-                return updateData('appStatus', channelID, 'currentPersona', 'Default');
+                return updateData(tbAppStatus, channelID, 'currentPersona', 'Default');
             };
             console.log(`Existing persona: ${currentPersona} does not exist in the database. Updating to ${updatePName}.\n`);
-            return updateData('appStatus', channelID, 'currentPersona', updatePName);
+            return updateData(tbAppStatus, channelID, 'currentPersona', updatePName);
         };
     };
 };
@@ -161,16 +178,16 @@ function insertNewData(table, id, isEnabled) {
     if (!tableExists(table)) return;
 
     switch (table) {
-        case 'appStatus':
+        case tbAppStatus:
             if (!channelExists(id)) {
-                insertStatement('appStatus').run(id, isEnabled, JSON.stringify(defaultData.personas), 'Default', defaultChatModel, defaultImageModel, JSON.stringify(defaultData.formSettings));
+                insertStatement(tbAppStatus).run(id, isEnabled, JSON.stringify(defaultData.personas), 'Default', defaultChatModel, defaultImageModel, JSON.stringify(defaultData.formSettings));
                 return console.log(`\nNew data added for channel ID: ${id}.\n`);
             } else {        
                 return console.log(`\nChannel ID: ${id} already exists in the database.\n`);
             };
-        case 'userTokens':
+        case tbUsers:
             if (!userExists(id)) {
-                insertStatement('userTokens').run(id, 0);
+                insertStatement(tbUsers).run(id, '0');
                 return console.log(`\nNew data added for user ID: ${id}.\n`);
             } else {
                 return console.log(`\nUser ID: ${id} already exists in the database.\n`);
@@ -189,7 +206,7 @@ function readAllFromTable(table) {
     };
     
     switch (table) {
-        case 'appStatus':
+        case tbAppStatus:
             return readStatement.map(row => ({
                 channelID: row.channelID,
                 isEnabled: row.isEnabled,
@@ -199,7 +216,7 @@ function readAllFromTable(table) {
                 currentImageModel: row.currentImageModel,
                 formSettings: JSON.parse(row.formSettings)
             }));
-        case 'userTokens':
+        case tbUsers:
             return readStatement.map(row => ({
                 userID: row.userID,
                 tokensUsed: row.tokensUsed
@@ -218,7 +235,7 @@ function readDataBy(table, searchBy, input) {
             return;
         } else {
             switch (table) {
-                case 'appStatus':
+                case tbAppStatus:
                     return {
                         channelID: returnData.channelID,
                         isEnabled: returnData.isEnabled,
@@ -228,7 +245,7 @@ function readDataBy(table, searchBy, input) {
                         currentImageModel: returnData.currentImageModel,
                         formSettings: JSON.parse(returnData.formSettings)
                     };
-                case 'userTokens':
+                case tbUsers:
                     return {
                         userID: returnData.userID,
                         tokensUsed: returnData.tokensUsed
@@ -239,7 +256,7 @@ function readDataBy(table, searchBy, input) {
 
     try {
         if (searchBy === 'id') {
-            const idName = table === 'appStatus' ? 'channelID' : 'userID';
+            const idName = table === tbAppStatus ? 'channelID' : 'userID';
             const selectById = db.prepare(`SELECT * FROM ${table} WHERE ${idName} = ?`).get(input);
             return returnStatement(selectById);
         } else if (searchBy === 'row') {
@@ -255,11 +272,11 @@ function readDataBy(table, searchBy, input) {
 // READ specific persona key value pair.
 function readJSONData(column, channelID, property) {
     try {
-        if (!tableExists('appStatus')) return;
+        if (!tableExists(tbAppStatus)) return;
         if (!channelExists(channelID)) return console.log('ERROR: channel ID does not exist.\n');
-        if (!columnExists(column)) return console.log('ERROR: column does not exist.\n');
+        if (!columnExists(tbAppStatus, column)) return console.log('ERROR: column does not exist.\n');
 
-        const selectStatement = db.prepare(`SELECT ${column} FROM appStatus WHERE channelID = ?`).get(channelID);
+        const selectStatement = db.prepare(`SELECT ${column} FROM ${tbAppStatus} WHERE channelID = ?`).get(channelID);
         const jsonData = JSON.parse(selectStatement[column]);
         if (property == nullVar) {
             return jsonData;
@@ -276,15 +293,28 @@ function readJSONData(column, channelID, property) {
     }
 };
 
-// UPDATE data (isEnabled etc. does not include personas) based on channelID.
-function updateData(table, channelID, column, input) {
+// UPDATE data (isEnabled etc. does not include personas) based on id.
+function updateData(table, id, column, input) {
     try {
         if (!tableExists(table)) return;
-        if (channelExists(channelID) && columnExists(column)) {
-            const updateStatement = db.prepare(`UPDATE ${table} SET ${column} = ? WHERE channelID = ?`);
+
+        let idType, isExist;
+        switch (table) {
+            case tbAppStatus:
+                idType = 'channelID';
+                isExist = channelExists(id);
+                break;
+            case tbUsers:
+                idType = 'userID';
+                isExist = userExists(id);
+                break;
+        };
+
+        if (isExist && columnExists(table, column)) {
+            const updateStatement = db.prepare(`UPDATE ${table} SET ${column} = ? WHERE ${idType} = ?`);
             if (checkColumn(table, column, input)) {
-                updateStatement.run(input, channelID);
-                return console.log(`Table ${table} - Column \'${column}\' at channel ID: ${channelID} has been updated to '${input}' successfully.\n`);                
+                updateStatement.run(input, id);
+                return console.log(`Table (${table}) > Column (${column}) at ${idType}: ${id} has been updated to '${input}' successfully.\n`);                
             };
         } else {
             return console.log(`ERROR in updating the data specified.\n`);
@@ -295,24 +325,36 @@ function updateData(table, channelID, column, input) {
 };
 
 // DELETE data from table.
-function deleteData(searchBy, input) {
+function deleteData(table, searchBy, input) {
     try {
-        if (readAllFromTable() != null) {
-            const channelData = readDataBy('appStatus', searchBy, input);
+        if (readAllFromTable(table) != null) {
+            const getData = readDataBy(table, searchBy, input);
     
-            if (typeof channelData === 'object' && channelData != undefined) { // checks if the returned value is an object or not
-                const deleteStatement = db.prepare('DELETE FROM appStatus WHERE channelID = ?');
-                deleteStatement.run(channelData.channelID); // delete data by referencing the ID from the returned object
-                return console.log(`Data for channel ID: ${channelData.channelID} has been successfully deleted.\n`);
-            } else if (channelData === undefined && input == 'all') {
-                const deleteAllStatement = db.prepare('DELETE FROM appStatus');
+            if (typeof getData === 'object' && getData != undefined) { // checks if the returned value is an object or not
+                let id, idType;
+                switch (table) {
+                    case tbAppStatus:
+                        id = getData.channelID;
+                        idType = 'channelID';
+                        break;
+                    case tbUsers:
+                        id = getData.userID;
+                        idType = 'userID';
+                        break;
+                };
+
+                const deleteStatement = db.prepare(`DELETE FROM ${table} WHERE ${idType} = ?`);
+                deleteStatement.run(id); // delete data by referencing the ID from the returned object
+                return console.log(`Data for channel ID: ${id} has been successfully deleted.\n`);
+            } else if (getData === undefined && input == 'all') {
+                const deleteAllStatement = db.prepare(`DELETE FROM ${table}`);
                 deleteAllStatement.run();
-                return console.log(`Data for table: appStatus has been successfully deleted.\n`);
+                return console.log(`Data for table: ${table} has been successfully deleted.\n`);
             } else {
                 return console.log(`ERROR: No data found for the specified search (${searchBy}: ${input}).\n`);
             };
         } else {            
-            return console.log(`The table appStatus is empty. No data to delete.\n`);
+            return console.log(`The table ${table} is empty. No data to delete.\n`);
         }
     } catch (error) {
         console.error(`ERROR in deleting data from database:\n`, error);
@@ -322,11 +364,11 @@ function deleteData(searchBy, input) {
 // EDIT JSON key and value through insertion, modification, and deletion.
 function editJSONData(column, action, channelID, key, value, updateKey, updateValue) {
     try {
-        if (!tableExists('appStatus')) return;
+        if (!tableExists(tbAppStatus)) return;
         if (!channelExists(channelID)) return console.log('ERROR: channel ID does not exist.\n');
-        if (!columnExists(column)) return console.log('ERROR: column does not exist.\n');
+        if (!columnExists(tbAppStatus, column)) return console.log('ERROR: column does not exist.\n');
 
-        const selectStatement = db.prepare(`SELECT ${column} FROM appStatus WHERE channelID = ?`).get(channelID);
+        const selectStatement = db.prepare(`SELECT ${column} FROM ${tbAppStatus} WHERE channelID = ?`).get(channelID);
         const jsonData = JSON.parse(selectStatement[column]);
 
         // Check action and if the key already exists
@@ -390,7 +432,7 @@ function editJSONData(column, action, channelID, key, value, updateKey, updateVa
         const updatedJSONData = JSON.stringify(jsonData);
 
         // Update the row with the updated personas object
-        const updateStatement = db.prepare(`UPDATE appStatus SET ${column} = ? WHERE channelID = ?`);
+        const updateStatement = db.prepare(`UPDATE ${tbAppStatus} SET ${column} = ? WHERE channelID = ?`);
         updateStatement.run(updatedJSONData, channelID);
         
         if (action == 'insert') {

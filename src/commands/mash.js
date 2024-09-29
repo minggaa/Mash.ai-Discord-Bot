@@ -17,12 +17,14 @@ module.exports = {
     async execute(interaction) {
         const input = interaction.options.getString('state');
         const channelID = interaction.channelId.toString();
+        const userID = interaction.user.id;
         const retrieveRow = db.readDataBy('appStatus', 'id', channelID);
         const checkRow = retrieveRow ? true : false;
 
         // Check if bot has ever been used in this channel by its existence in the db.
         if (!checkRow) {
             db.insertNewData('appStatus', channelID, 1);
+            db.insertNewData('users', userID);
             return await interaction.reply("Hello, I'm enabled.");
         };
         

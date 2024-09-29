@@ -32,7 +32,6 @@ module.exports = {
                 errorLog.push(error);
 
                 const properties = {
-                    content: errorMessage,
                     embeds: [errorEmbed('An error occured while executing this command!', `Use ${inlineCode(`/${commandName}`)} to try again.`)],
                     ephemeral: true,
                 };

@@ -61,7 +61,7 @@ const toTitleCase = (input) => {
 const insertStatement = (table) => {
     switch (table) {
         case tbAppStatus:
-            db.prepare(`INSERT OR IGNORE INTO ${tbAppStatus} (channelID, isEnabled, personas, currentPersona, currentChatModel, currentImageModel, formSettings) VALUES (?, ?, ?, ?, ?, ?, ?)`);
+            return db.prepare(`INSERT OR IGNORE INTO ${tbAppStatus} (channelID, isEnabled, personas, currentPersona, currentChatModel, currentImageModel, formSettings) VALUES (?, ?, ?, ?, ?, ?, ?)`);
         case tbUsers:
             return db.prepare(`INSERT OR IGNORE INTO ${tbUsers} (userID, tokensUsed) VALUES (?, ?)`);
     }

@@ -60,7 +60,8 @@
         "lowVarEmoji": "🎇",
         "highVarEmoji": "🎆",
         "pinEmoji": "📌",
-        "unpinEmoji": "❌"
+        "unpinEmoji": "❌",
+        "tokenEmoji": "🪙"
     },
 
     "PersonaModalsText": {

@@ -321,6 +321,21 @@ async function imageDownload(reason, imageUrl, channelID, messageID) {
     };
 };
 
+function logTokens(userId, usage) {
+    try {
+        const { total_tokens } = usage;
+        const getTokens = db.readDataBy('users', 'id', userId).tokensUsed || 0;
+        // const calcTokens = total_tokens + getTokens;
+    
+        db.updateData('users', userId, 'tokensUsed', total_tokens + getTokens);
+        console.log(`Logged tokens: ${total_tokens + getTokens}`);
+    } catch (error) {
+        console.error('ERROR LOGGING TOKENS:\n', error);
+        errorLog.push(error);
+        return;
+    }
+};
+
 module.exports = {
     client,
     openai,
@@ -340,4 +355,5 @@ module.exports = {
     outputNumStandards,
     scaleCalc,
     imageDownload,
+    logTokens
 };

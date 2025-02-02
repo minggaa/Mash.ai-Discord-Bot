@@ -122,7 +122,7 @@ function columnExists(table, column) {
             return true;
         }
     };
-    console.log(`ERROR: unable to fetch any records as the column (${column}) does not exist.\n`);
+    console.log(`ERROR: Unable to fetch any records as the column (${column}) does not exist.\n`);
     return false;
 };
 
@@ -140,10 +140,8 @@ function checkColumn(table, column, input) {
         inputType = 'varchar(255)';
     }
 
-    // console.log(`${typeof input}\n${columnType}\ninput type: ${inputType}\ncolumn type: ${columnType}`);
     if (inputType != columnType) {
-        console.log(`\n${columnType}\n${inputType}\n`);
-        console.log(`ERROR in updating the specified data due to a mismatch of data types in the table column.\n`);
+        console.log(`ERROR: Unable to update the specified data due to a mismatch of data types in the table column.\n`);
         return false;
     } else {
         return true;

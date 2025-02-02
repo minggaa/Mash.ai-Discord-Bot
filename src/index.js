@@ -56,7 +56,7 @@ try {
         const channelID = message.channelId.toString();
 
         // Checks if the current channel has any records of being enabled in the db. (will need to be activated by /commands)
-        const channelData = db.readDataBy('id', channelID);
+        const channelData = db.readDataBy('appStatus', 'id', channelID);
         if (!channelData) return;
 
         // Retrieves the bot status in the channel where message is sent.
@@ -72,11 +72,11 @@ try {
         if (message.content.startsWith(ignorePrefix)) return;
 
         // Check for selected/current persona.
-        const personaName = db.readDataBy('id', channelID).currentPersona;
-        const selectedPersona = db.readPersona(channelID, personaName);
+        const personaName = db.readDataBy('appStatus', 'id', channelID).currentPersona;
+        const selectedPersona = db.readJSONData('personas', channelID, personaName);
 
         // Check for the channel's current model.
-        const currentChatModel = db.readDataBy('id', channelID).currentChatModel;
+        const currentChatModel = db.readDataBy('appStatus', 'id', channelID).currentChatModel;
 
         // Fetch previous previous messages in current channel (limited to previous 10 messages).
         let prevMessages = await message.channel.messages.fetch({ limit: 10 });
@@ -145,6 +145,9 @@ try {
             // Reply to messages.
             await message.reply(chunk);
         };
+
+        // Get and logs the tokens used by the user.
+        bot.logTokens(message.author.id, response.usage);
 
         // Logs user replies in the chatroom.
         console.log("User " + message.author.id + " - " + message.author.username + "(" + message.author.displayName + ")" +" sent: " + message.content);

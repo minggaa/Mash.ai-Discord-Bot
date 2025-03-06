@@ -554,45 +554,51 @@ module.exports = {
             // Send request to the API to receive OpenAI's response.
             const runOpenAI = async() => {
                 await checkDimensions();
-                console.log("Running OpenAI:", { "Model": getCurrentImageModel, "Prompt": prompt, "Number": number, "Size": size, "Quality": quality });
-
-                const response = await openai.images.generate({
+                const input = {
                     model: getCurrentImageModel,
                     prompt: prompt,
                     n: number,
                     size: size,
-                    quality: quality, // check if its dalle 3
-                }).catch(async (error) => {
+                    ...(getCurrentImageModel === "dall-e-3" ? { quality: quality } : {}),
+                }
+                
+                try {
+                    console.log("Running OpenAI:", input);
+                    const response = await openai.images.generate(input);
+
+                    bot.logUsage('image', interaction.user.id, { number: number, size: size, quality: quality }, getCurrentImageModel);
+
+                    return response;
+                } catch (error) {
                     console.error('OpenAI ERROR:\n', error);
                     errorLog.push(error);
                     await printError('openAIError');
-                });
-
-                bot.logUsage('image', interaction.user.id, { number: number, size: size, quality: quality }, getCurrentImageModel);
-
-                return response;
+                };
             };
 
             const runOpenAIVariation = async(imageUrl, numOutputs) => {
                 numOutputs = numOutputs || number;
                 await checkDimensions();
-                console.log("Running OpenAI Variation:", { "Model": getCurrentImageModel, "Image": imageUrl, "Number": numOutputs, "Size": size });
-                
-                // Variations are only support for Dall·E 2, so no need for quality option.
-                const response = await openai.images.createVariation({
+                const input = {
                     model: getCurrentImageModel,
                     image: imageUrl,
                     n: numOutputs,
                     size: size,
-                }).catch(async (error) => {
+                }
+                
+                // Variations are only support for Dall·E 2, so no need for quality option.
+                try {
+                    console.log("Running OpenAI Variation:", input);
+                    const response = await openai.images.createVariation(input);
+
+                    bot.logUsage('image', interaction.user.id, { number: number, size: size }, getCurrentImageModel);
+
+                    return response;
+                } catch (error) {
                     console.error('OpenAI ERROR:\n', error);
                     errorLog.push(error);
                     await printError('openAIError');
-                });
-
-                bot.logUsage('image', interaction.user.id, { number: number, size: size }, getCurrentImageModel);
-
-                return response;
+                };
             };
 
             const runReplicate = async(model, input, numOutputs) => {

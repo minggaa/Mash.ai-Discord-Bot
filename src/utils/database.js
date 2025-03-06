@@ -36,7 +36,8 @@ db.prepare(`
 db.prepare(`
     CREATE TABLE IF NOT EXISTS ${tbUsers} (
         userID VARCHAR(255) NOT NULL PRIMARY KEY,
-        tokensUsed VARCHAR(255) NOT NULL
+        tokensUsed INTEGER DEFAULT 0 NOT NULL,
+        totalCost REAL DEFAULT 0 NOT NULL
     )
 `).run();
 
@@ -63,7 +64,7 @@ const insertStatement = (table) => {
         case tbAppStatus:
             return db.prepare(`INSERT OR IGNORE INTO ${tbAppStatus} (channelID, isEnabled, personas, currentPersona, currentChatModel, currentImageModel, formSettings) VALUES (?, ?, ?, ?, ?, ?, ?)`);
         case tbUsers:
-            return db.prepare(`INSERT OR IGNORE INTO ${tbUsers} (userID, tokensUsed) VALUES (?, ?)`);
+            return db.prepare(`INSERT OR IGNORE INTO ${tbUsers} (userID, tokensUsed, totalCost) VALUES (?, ?, ?)`);
     }
 };
 
@@ -132,16 +133,15 @@ function checkColumn(table, column, input) {
     const columnType = checkStatement.columns().map(column => column.type.toLowerCase()); // extracts the data type of the input column
     let inputType;
     
-    if ((typeof input == 'integer' || 'number') && (input === 0 || input === 1)) {
-        inputType = 'boolean';
-    } else if (typeof input == 'number') {
-        inputType = 'integer';
+    if (typeof input === 'number') {
+        if ((input === 0 || input === 1) && columnType === 'boolean') inputType = 'boolean';
+        else inputType = columnType[0] === 'real' ? 'real' : 'integer';
     } else if (typeof input == 'string') {
         inputType = 'varchar(255)';
     }
 
     if (inputType != columnType) {
-        console.log(`ERROR: Unable to update the specified data due to a mismatch of data types in the table column.\n`);
+        console.log(`ERROR: Unable to update the specified data due to a mismatch of data types in the table column.\n  | Column Type: ${columnType}\n  | Input Type:  ${inputType}\n`);
         return false;
     } else {
         return true;
@@ -185,7 +185,7 @@ function insertNewData(table, id, isEnabled) {
             };
         case tbUsers:
             if (!userExists(id)) {
-                insertStatement(tbUsers).run(id, '0');
+                insertStatement(tbUsers).run(id, '0', '0');
                 return console.log(`\nNew data added for user ID: ${id}.\n`);
             } else {
                 return console.log(`\nUser ID: ${id} already exists in the database.\n`);
@@ -217,7 +217,8 @@ function readAllFromTable(table) {
         case tbUsers:
             return readStatement.map(row => ({
                 userID: row.userID,
-                tokensUsed: row.tokensUsed
+                tokensUsed: row.tokensUsed,
+                totalCost: row.totalCost
             }));
     };
 };
@@ -246,7 +247,8 @@ function readDataBy(table, searchBy, input) {
                 case tbUsers:
                     return {
                         userID: returnData.userID,
-                        tokensUsed: returnData.tokensUsed
+                        tokensUsed: returnData.tokensUsed,
+                        totalCost: returnData.totalCost
                     };
             };
         };

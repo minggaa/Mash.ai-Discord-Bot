@@ -147,7 +147,7 @@ try {
         };
 
         // Get and logs the tokens used by the user.
-        bot.logTokens(message.author.id, response.usage);
+        bot.logUsage('text', message.author.id, response.usage, currentChatModel);
 
         // Logs user replies in the chatroom.
         console.log("User " + message.author.id + " - " + message.author.username + "(" + message.author.displayName + ")" +" sent: " + message.content);

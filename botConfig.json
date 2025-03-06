@@ -15,7 +15,7 @@
         },
         
         "Upscaler": {
-            "real-esrgan": "nightmareai/real-esrgan:350d32041630ffbe63c8352783a26d94126809164e54085352f8326e53999085"
+            "real-esrgan": "nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa"
         }
     },
 
@@ -28,8 +28,58 @@
         "horizontal": "1792x1024"
     },
 
+    "PricingModels": {
+        "ChatGPT": {
+            "gpt-4o": { 
+                "input": 0.005, 
+                "output": 0.015 
+            },
+            "gpt-4-turbo": { 
+                "input": 0.01, 
+                "output": 0.03 
+            },
+            "gpt-4": { 
+                "input": 0.03, 
+                "output": 0.06 
+            },
+            "gpt-3.5-turbo": { 
+                "input": 0.0015, 
+                "output": 0.002 
+            }
+        },
+
+        "Dall-E": {
+            "dall-e-3": {
+                "quality": {
+                    "standard": {
+                        "1024x1024": 0.04,
+                        "1792x1024": 0.08,
+                        "1024x1792": 0.08
+                    },
+                    "hd": {
+                        "1024x1024": 0.08,
+                        "1792x1024": 0.12,
+                        "1024x1792": 0.12
+                    }
+                }
+            },
+            "dall-e-2": {
+                "256x256": 0.016,
+                "512x512": 0.018,
+                "1024x1024": 0.02
+            }
+        }
+    },
+
     "NegativePrompt": {
         "default": "nsfw, lowres, bad anatomy, bad hands, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry"
+    },
+
+    "DalleSchemaField": {
+        "quality": [
+            "standard",
+            "hd"
+        ]
     },
 
     "ReplicateSchemaField": {

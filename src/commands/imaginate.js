@@ -22,13 +22,15 @@ const bot = require('../utils/bot.js');
 const colors = bot.colors;
 
 const config = require('../../botConfig.json');
+const { sampleData } = require('../../auxiliary/test.js');
 const emojis = config.commandEmojis;
 const models = config.GenerationModels;
 const imageModels = models.ImageModels;
 const upscalerModel = models.Upscaler['real-esrgan'];
 const imageSize = config.ImageSizes;
-const negPrompt = config.NegativePrompt;
-const schemaFields = config.ReplicateSchemaField;
+const defaultNegPrompt = config.NegativePrompt;
+const replicateSchema = config.ReplicateSchemaField;
+const dalleSchema = config.DalleSchemaField;
 
 // Define constants.
 const repeatEmoji = emojis.repeatEmoji;
@@ -48,7 +50,7 @@ const getArrayOptions = (array) => {
     }));
 };
 
-const optionMsg = `(Only for ${inlineCode('Stable Diffusion')} & ${inlineCode('DreamShaper')} models)`;
+const optionMsg = `[Only for ${inlineCode('Stable Diffusion')} & ${inlineCode('DreamShaper')} models]`;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -71,6 +73,11 @@ module.exports = {
                 .setRequired(false)
                 .setAutocomplete(true))
         .addStringOption(
+            option => option.setName('quality')
+                .setDescription('Select a quality type for your image. [Dall·E Option Only]')
+                .setRequired(false)
+                .setChoices(...getArrayOptions(dalleSchema.quality)))
+        .addStringOption(
             option => option.setName('negprompt')
                 .setDescription(`Negative Prompts to avoid in your image. ${optionMsg}`)
                 .setRequired(false))
@@ -78,12 +85,12 @@ module.exports = {
             option => option.setName('scheduler')
                 .setDescription(`Select a scheduler. ${optionMsg}`)
                 .setRequired(false)
-                .setChoices(...getArrayOptions(schemaFields.scheduler)))
+                .setChoices(...getArrayOptions(replicateSchema.scheduler)))
         .addStringOption(
             option => option.setName('refiner')
                 .setDescription(`Select a refiner. ${optionMsg}`)
                 .setRequired(false)
-                .setChoices(...getArrayOptions(schemaFields.refiner))),
+                .setChoices(...getArrayOptions(replicateSchema.refiner))),
     async autocomplete(interaction) {
         const focusedValue = interaction.options.getFocused();
         const choices = [...getSizes];
@@ -96,14 +103,15 @@ module.exports = {
         let prompt = interaction.options.getString('prompt');
         let number = interaction.options.getInteger('number') || 1;
         let size = interaction.options.getString('size');
+        let quality = interaction.options.getString('quality') || 'hd';
 
         let sizeSplit;
         let width;
         let height;
         let negPrompt = interaction.options.getString('negprompt') || '';
         let seed = [];
-        let scheduler = schemaFields.scheduler[0];
-        let refiner = schemaFields.refiner[0];
+        let scheduler = replicateSchema.scheduler[0];
+        let refiner = replicateSchema.refiner[0];
         let isNSFW = false;
         let getPredictionId = [] ;
 
@@ -311,7 +319,13 @@ module.exports = {
                 for (const key of Object.keys(data)) {
                     let description = `${bold('Prompt: ')}\n${prompt}`, footer = '\t';
                     let field = [{ name: '\t', value: '\t' }];
-                    negPrompt ? description += `\n\n${bold('Negative Prompt: ')}\n${negPrompt}` : description;
+                    description += negPrompt 
+                        ? `\n\n${bold('Negative Prompt: ')}\n${negPrompt}` 
+                        : '';
+                    description += getCurrentImageModel === imageModels['Dall·E 3'] 
+                        ? `\n\n${bold('Quality: ')}\n${quality}`
+                        : '';
+
                     if (!loading) {
                         // Set seed details.
                         field = [];
@@ -442,7 +456,7 @@ module.exports = {
 
                     const status = await fetch(request)
                         .then((response) => {
-                            console.log(`(${url}) - code: ${response.status}`);
+                            console.log(`[Status Code]: ${response.status} - (${url})`);
                             return response.status;
                         });
                     return checkStatus(url, status);
@@ -486,8 +500,8 @@ module.exports = {
                 // Only clears all if true, either replace one with specified ID position, or no clearing.
                 if (checkImgModelType('Replicate')) {
                     const position = parseInt(pos);
-                    clearPredictionId = clearPredictionId != false ? position || true : clearPredictionId;
-                    if (clearPredictionId === false) getPredictionId = []; // To empty once before creating new set of predictions.
+                    clearPredictionId = clearPredictionId != false ? (position || true) : clearPredictionId;
+                    if (!clearPredictionId) getPredictionId = []; // To empty once before creating new set of predictions.
                 };
                 
                 if (!isInitial) {
@@ -540,33 +554,45 @@ module.exports = {
             // Send request to the API to receive OpenAI's response.
             const runOpenAI = async() => {
                 await checkDimensions();
+                console.log("Running OpenAI:", { "Model": getCurrentImageModel, "Prompt": prompt, "Number": number, "Size": size, "Quality": quality });
 
-                return await openai.images.generate({
+                const response = await openai.images.generate({
                     model: getCurrentImageModel,
                     prompt: prompt,
                     n: number,
+                    size: size,
+                    quality: quality, // check if its dalle 3
+                }).catch(async (error) => {
+                    console.error('OpenAI ERROR:\n', error);
+                    errorLog.push(error);
+                    await printError('openAIError');
+                });
+
+                bot.logUsage('image', interaction.user.id, { number: number, size: size, quality: quality }, getCurrentImageModel);
+
+                return response;
+            };
+
+            const runOpenAIVariation = async(imageUrl, numOutputs) => {
+                numOutputs = numOutputs || number;
+                await checkDimensions();
+                console.log("Running OpenAI Variation:", { "Model": getCurrentImageModel, "Image": imageUrl, "Number": numOutputs, "Size": size });
+                
+                // Variations are only support for Dall·E 2, so no need for quality option.
+                const response = await openai.images.createVariation({
+                    model: getCurrentImageModel,
+                    image: imageUrl,
+                    n: numOutputs,
                     size: size,
                 }).catch(async (error) => {
                     console.error('OpenAI ERROR:\n', error);
                     errorLog.push(error);
                     await printError('openAIError');
                 });
-            };
 
-            const runOpenAIVariation = async(imageUrl, numOutputs) => {
-                numOutputs = numOutputs || number;
-                await checkDimensions();
+                bot.logUsage('image', interaction.user.id, { number: number, size: size }, getCurrentImageModel);
 
-                return await openai.images.createVariation({
-                    model: getCurrentImageModel,
-                    image: imageUrl,
-                    n: numOutputs,
-                    size: size
-                }).catch(async (error) => {
-                    console.error('OpenAI ERROR:\n', error);
-                    errorLog.push(error);
-                    await printError('openAIError');
-                });
+                return response;
             };
 
             const runReplicate = async(model, input, numOutputs) => {
@@ -575,11 +601,13 @@ module.exports = {
                 input = input || replicateInputJSON();
                 numOutputs = numOutputs || number;
 
-                input.num_outputs = numOutputs;
-
-                await checkDimensions();
-                input.width = width;
-                input.height = height;
+                if (model != upscalerModel) {
+                    input.num_outputs = numOutputs;
+    
+                    await checkDimensions();
+                    input.width = width;
+                    input.height = height;
+                };
                 
                 const onProgress = (prediction) => {
                     const timeCreated = new Date(prediction.created_at);
@@ -591,13 +619,15 @@ module.exports = {
                     console.log({id: prediction.id, status: prediction.status, time: bot.startTimer(timeCreated), log: lastLongLine});
                 };
 
-                console.log('In runReplicate:\n', input);
-                return replicate.run(model, { input }, onProgress)
+                console.log('Running Replicate:', input);
+                const output = await replicate.run(model, { input }, onProgress)
                     .catch(async (error) => {
                         console.error('Replicate ERROR:\n', error);
                         errorLog.push(error);
                         await printError('replicateError');
                     });
+
+                return output.url().href;
             };
 
             const runReplicateVariation = async(imageUrl, input) => {
@@ -732,44 +762,44 @@ module.exports = {
                     // Receive user button input.
                     switch (interaction.customId) {
                         case `variation-${getCount}`:
-                            console.log(`\nVariation ${getCount} button clicked`);
+                            console.log(`\n[Interaction]: Variation ${getCount} Button (clicked)`);
                             await interactionReply(await variationHandler(getCount, true));
                             break;
                         case `upscale-${getCount}`:
-                            console.log(`\nUpscale ${getCount} button clicked`);
+                            console.log(`\n[Interaction]: Upscale ${getCount} Button (clicked)`);
                             await interactionReply(await upscaleHandler(getCount));
                             break;
                         case `reroll`:
-                            console.log(`\nReroll button clicked`);
+                            console.log(`\n[Interaction]: Reroll Button (clicked)`);
                             await interactionReply(await rerollHandler());
                             break;
                         case `editForm`:
-                            console.log(`\nEdit Form button clicked`);
+                            console.log(`\n[Interaction]: Edit Form Button (clicked)`);
                             await modalDisplayHandler(`editImageForm-${interaction.id}`);
                             break;
                         case `formSettings`:
-                            console.log(`\nForm Settings button clicked`);
+                            console.log(`\n[Interaction]: Form Settings Button (clicked)`);
                             await modalDisplayHandler(`formSettings-${interaction.id}`);
                             break;
                         case `vary`:
-                            console.log(`\nVary button clicked`);
+                            console.log(`\n[Interaction]: Vary Button (clicked)`);
                             await interactionReply(await variationHandler(null, false));
                             break;
                         case `upscaleX1.5`:
-                            console.log(`\nUpscale x1.5 button clicked`);
+                            console.log(`\n[Interaction]: Upscale x1.5 Button (clicked)`);
                             await interactionReply(await upscaleHandler(null, 1.5));
                             break;
                         case `upscaleX2`:
-                            console.log(`\nUpscale x2 button clicked`);
+                            console.log(`\n[Interaction]: Upscale x2 Button (clicked)`);
                             await interactionReply(await upscaleHandler(null, 2));
                             break;
                         case `pin`:
                         case `unpin`:
-                            console.log(`\n${bot.toTitleCase(interaction.customId)} button clicked`);
+                            console.log(`\n[Interaction]: ${bot.toTitleCase(interaction.customId)} Button (clicked)`);
                             await pinHandler();
                             break;
                         default:
-                            console.log(`\nUnhandled button customId ${interaction.customId}\n`);
+                            console.log(`\n[Interaction]: Unhandled Button customId ${interaction.customId}\n`);
                     };
 
                     // Handle image variation generation.
@@ -831,8 +861,13 @@ module.exports = {
                             if (isMultiple && !pos) {
                                 await handleMultipleRequests();
                             } else {
-                                responseVariation = await runOpenAIVariation(await imageDownload('getReadStream', imageUrl, getMessage), 1);
+                                responseVariation = getCurrentImageModel === 'dall-e-2' 
+                                    ? await runOpenAIVariation(await imageDownload('getReadStream', imageUrl, getMessage), 1)
+                                    : await runOpenAI();
                                 getVarUrl = responseVariation.data[0].url;
+
+                                // Handles clearing prediction ID(s) if previously ran Replicate request.
+                                if (getPredictionId.length > 0) getPredictionId = [];
                             };
                             
                             updateResponseUrl('OpenAI', isMultiple, pos, getVarUrl);
@@ -878,8 +913,16 @@ module.exports = {
                         
                         await loadingState(null, true);
                         responseUpscale = await runReplicate(upscalerModel, upscalerInput, number);
+                        
+                        if (!responseUpscale) {
+                            console.error("ERROR: Replicate API did not return an expected output:", responseUpscale);
+                            errorLog.push("Replicate API did not return an expected output.");
+                            await printError();
+                        }
+
+                        // Update respone URL based on image model; clear prediction ID if OpenAI model.
                         response = checkImgModelType('OpenAI')
-                            ? [{ url: responseUpscale[0] }]
+                            ? [{ url: responseUpscale }]
                             : [ ...responseUpscale ];
 
                         return response;
@@ -1008,8 +1051,8 @@ module.exports = {
                                 );
                                 modalDisplay.addComponents(useImageActionRow);
 
+                                const imageOptionsActionRow = new ActionRowBuilder().addComponents();
                                 if (getCurrentImageModel != imageModels['Dall·E 3']) {
-                                    const imageOptionsActionRow = new ActionRowBuilder().addComponents();
                                     (isSingledOut) 
                                         ? imageOptionsActionRow.components.push(
                                             new TextInputBuilder({
@@ -1030,6 +1073,17 @@ module.exports = {
                                                 style: TextInputStyle.Short,
                                                 required: true
                                             }));
+                                    modalDisplay.addComponents(imageOptionsActionRow);
+                                } else {
+                                    imageOptionsActionRow.components.push(
+                                        new TextInputBuilder({
+                                            customId: 'qualityInput',
+                                            label: 'Select Image Quality',
+                                            placeholder: 'standard or hd',
+                                            value: quality,
+                                            style: TextInputStyle.Short,
+                                            required: false
+                                        }));
                                     modalDisplay.addComponents(imageOptionsActionRow);
                                 };
                             };
@@ -1106,34 +1160,54 @@ module.exports = {
                                     let imagePosValue = getCurrentImageModel != imageModels['Dall·E 3']
                                         ? isSingledOut ? undefined : modalInteraction.fields.getTextInputValue('imagePosInput')
                                         : undefined;
+                                    const qualityValue = getCurrentImageModel === imageModels['Dall·E 3'] 
+                                        ? modalInteraction.fields.getTextInputValue('qualityInput').toLowerCase() 
+                                        : undefined;
 
                                     // Check if user inputs valid value for num_outputs and image position number.
-                                    const checkInput = (type, input) => {
-                                        const range = [1, 2, 3, 4];
-                                        const parsedInput = typeof input === 'string' ? parseInt(input) : input;
-                                    
-                                        // Checks if input is within the range of image currently available
-                                        switch(type) {
-                                            case 1:
-                                                return range.includes(parsedInput) && (parsedInput >= 1 && parsedInput <= 4);
-                                            case 2:
-                                                // Checks if user inputs a number or 'All' option
-                                                if (range.includes(parsedInput) && (parsedInput >= 1 && parsedInput <= number)) {
-                                                    imagePosValue = parsedInput;
-                                                    return true;
-                                                };
-                                                if (typeof input === 'string' && isNaN(parsedInput)) {
-                                                    const checkStrOptions = [...bot.posStringInputs].includes(input.toLowerCase());
-                                                    checkStrOptions ? imagePosValue = 'reroll' : undefined;
-                                                    return checkStrOptions;
-                                                };
-                                                return false;
-                                        };
+                                    const inputValidators = {
+                                        INPUT_RANGE: [1, 2, 3, 4],
+                                        numOutputs: (input) => {
+                                            const parsedInput = typeof input === 'string' ? parseInt(input) : input;
+                                            return inputValidators.INPUT_RANGE.includes(parsedInput) && 
+                                                parsedInput >= 1 && 
+                                                parsedInput <= 4;
+                                        },
+
+                                        imagePosition: (input) => {
+                                            const parsedInput = typeof input === 'string' ? parseInt(input) : input;
+                                            
+                                            // Check numeric input
+                                            if (inputValidators.INPUT_RANGE.includes(parsedInput) && parsedInput >= 1 && parsedInput <= number) {
+                                                imagePosValue = parsedInput;
+                                                return true;
+                                            };
+
+                                            // Check string input (e.g., 'All')
+                                            if (typeof input === 'string' && isNaN(parsedInput)) {
+                                                const checkStrOptions = [...bot.posStringInputs].includes(input.toLowerCase());
+                                                checkStrOptions ? imagePosValue = 'reroll' : undefined;
+                                                return checkStrOptions;
+                                            };
+
+                                            return false;
+                                        },
+
+                                        quality: (input) => {
+                                            const check = dalleSchema.quality.includes(input);
+                                            console.log(check);
+                                            return check;
+                                        }
                                     };
 
                                     if (getCurrentImageModel != imageModels['Dall·E 3']) {
-                                        if (!checkInput(1, numOutputValue)) return await replyModalError(numOutputValue, `a 'valid' input between ${inlineCode('1 to 4')}.`);
-                                        if (!checkInput(2, imagePosValue) && imagePosValue != undefined) return await replyModalError(imagePosValue, `a 'valid' selection between ${inlineCode(`1 to ${number}`)} or ${inlineCode(`'All'`)} to select all.`);
+                                        if (!inputValidators.numOutputs(numOutputValue)) return await replyModalError(numOutputValue, `a 'valid' input between ${inlineCode('1 to 4')}.`);
+                                        if (!inputValidators.imagePosition(imagePosValue) && imagePosValue != undefined) return await replyModalError(imagePosValue, `a 'valid' selection between ${inlineCode(`1 to ${number}`)} or ${inlineCode(`'All'`)} to select all.`);
+                                        
+                                    } else {
+                                        if (!inputValidators.quality(qualityValue) && qualityValue != undefined) {
+                                            return await replyModalError(qualityValue, `a 'valid' input between ${inlineCode(`'standard' or 'hd'`)}.`);
+                                        } else { quality = qualityValue };
                                     };
                                     
                                     isUsingImage = bot.yesInputs.includes(useImageValue) ? true : bot.noInputs.includes(useImageValue) ? false : undefined;
@@ -1198,8 +1272,8 @@ module.exports = {
                                     let successMessage = '';
 
                                     // Input validation.
-                                    if (!schemaFields.scheduler.includes(getScheduler)) return await replyModalError(getScheduler, `one of these options\n${'```\n- ' + schemaFields.scheduler.join('\n- ') + '\n```'}`);
-                                    if (!schemaFields.refiner.includes(getRefiner)) return await replyModalError(getRefiner, `one of these options\n${'```\n- ' + schemaFields.refiner.join('\n- ') + '\n```'}`);
+                                    if (!replicateSchema.scheduler.includes(getScheduler)) return await replyModalError(getScheduler, `one of these options\n${'```\n- ' + replicateSchema.scheduler.join('\n- ') + '\n```'}`);
+                                    if (!replicateSchema.refiner.includes(getRefiner)) return await replyModalError(getRefiner, `one of these options\n${'```\n- ' + replicateSchema.refiner.join('\n- ') + '\n```'}`);
 
                                     // Update if all validations passed.
                                     const updateScheduler = db.editJSONData('formSettings', 'update', channelID, 'scheduler', scheduler, null, getScheduler);

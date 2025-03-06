@@ -17,7 +17,10 @@ const db = require('./database.js');
 
 const config = require('../../botConfig.json');
 const models = config.GenerationModels;
+const dallePricing = config.PricingModels['Dall-E'];
+const chatgptPricing = config.PricingModels['ChatGPT'];
 const imageModels = models.ImageModels;
+const dalleSchema = config.DalleSchemaField;
 
 // Create new Client instance.
 const client = new Client({ intents: ['Guilds', 'GuildMembers', 'GuildMessages', 'MessageContent'] });
@@ -306,7 +309,7 @@ async function imageDownload(reason, imageUrl, channelID, messageID) {
                     console.error('RENAMING ERROR:\n', error);
                     errorLog.push(error);
                     return;
-                } else console.log('Rename complete!\n');
+                } else console.log('  └─ Rename complete!\n');
             });
             imagePath = updatedPathName;
             fileName = updatedFileName;
@@ -321,18 +324,60 @@ async function imageDownload(reason, imageUrl, channelID, messageID) {
     };
 };
 
-function logTokens(userId, usage) {
+function logUsage(type, userId, usage, model) {
     try {
-        const { total_tokens } = usage;
         const getTokens = db.readDataBy('users', 'id', userId).tokensUsed || 0;
-        // const calcTokens = total_tokens + getTokens;
-    
-        db.updateData('users', userId, 'tokensUsed', total_tokens + getTokens);
-        console.log(`Logged tokens: ${total_tokens + getTokens}`);
+        const getCost = db.readDataBy('users', 'id', userId).totalCost || 0;
+        let cost = 0;
+        let logMessage = '';
+
+        if (type == 'text') {
+            const { prompt_tokens, completion_tokens, total_tokens } = usage;
+            const tokens = Number((total_tokens + getTokens).toFixed(4));
+
+            // Handle token logging for text completion.
+            db.updateData('users', userId, 'tokensUsed', tokens);
+            logMessage += `Logged tokens: ${tokens}\n`;
+
+            // Handle cost calculation for text completion.
+            cost = calculateChatCost(model, prompt_tokens, completion_tokens) + getCost;
+        };
+
+        if (type == 'image') {
+            const { number, size, quality } = usage;
+            const imageCost = model === imageModels['Dall·E 3']
+                ? dallePricing["dall-e-3"].quality[quality][size] * number
+                : dallePricing["dall-e-2"][size] * number;
+
+            if (Number.isNaN(imageCost)) throw(`Invalid image sizing for image model selected: ${model}.`);
+
+            // Handle cost calculation for image generation.
+            cost = Number((imageCost + getCost).toFixed(6));
+        };
+
+        // Handle cost logging for any request generated.
+        db.updateData('users', userId, 'totalCost', cost);
+
+        logMessage += `Logged cost: $${cost}\n`;
+        console.log(logMessage);
     } catch (error) {
         console.error('ERROR LOGGING TOKENS:\n', error);
         errorLog.push(error);
         return;
+    };
+    
+    /**
+     * Calculates the cost of a chat completion request.
+     * @param {string} model - The model used (e.g., "gpt-4o").
+     * @param {number} inputTokens - Number of input tokens.
+     * @param {number} outputTokens - Number of output tokens.
+     * @returns {number} - The total estimated cost in USD.
+     */
+    function calculateChatCost(model, inputTokens, outputTokens) {
+        if (!chatgptPricing[model]) return 0;
+
+        const { input, output } = chatgptPricing[model];
+        return ((inputTokens / 1000) * input) + ((outputTokens / 1000) * output);
     }
 };
 
@@ -355,5 +400,5 @@ module.exports = {
     outputNumStandards,
     scaleCalc,
     imageDownload,
-    logTokens
+    logUsage
 };

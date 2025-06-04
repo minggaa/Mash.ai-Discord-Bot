@@ -1,4 +1,4 @@
-const { Events, inlineCode } = require('discord.js');
+const { Events, MessageFlags, inlineCode } = require('discord.js');
 
 const bot = require('../utils/bot.js');
 const colors = bot.colors;
@@ -33,7 +33,7 @@ module.exports = {
 
                 const properties = {
                     embeds: [errorEmbed('An error occured while executing this command!', `Use ${inlineCode(`/${commandName}`)} to try again.`)],
-                    ephemeral: true,
+                    flags: MessageFlags.Ephemeral,
                 };
                 
                 if (interaction.replied || interaction.deferred) {

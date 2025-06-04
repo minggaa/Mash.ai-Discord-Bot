@@ -8,6 +8,7 @@ const {
     EmbedBuilder,
     ButtonBuilder,
     ButtonStyle,
+    MessageFlags,
     bold, italic, strikethrough, inlineCode} = require('discord.js');
 const fs = require('fs');
 const path = require('path');
@@ -116,7 +117,7 @@ const inputErrorEmbed = (value, description) => {
                 color: colors.failureColor,
             }).setTimestamp()
         ],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     };
 };
 

@@ -7,6 +7,7 @@ const {
     EmbedBuilder,
     ButtonBuilder,
     ButtonStyle,
+    MessageFlags,
     bold, italic, inlineCode } = require('discord.js');
 
 const db = require('../utils/database.js');
@@ -51,7 +52,7 @@ module.exports = {
         if (bot.checkEnabled(channelID)) {
             return await interaction.reply({
                 embeds: [bot.checkEnabled(channelID)],
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         };
 
@@ -188,7 +189,7 @@ module.exports = {
         const reply = await interaction.reply({
             embeds: [embedView(embedFieldsObj, getCurrentModel)],
             components: [addActionRow(selectModelMenu(getCurrentModel)), addActionRow(buttonDisplay())],
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
 
         // Retrieves the user selection.

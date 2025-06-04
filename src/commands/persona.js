@@ -10,6 +10,7 @@ const {
     ModalBuilder,
     TextInputBuilder,
     TextInputStyle,
+    MessageFlags,
     bold, italic, strikethrough, inlineCode } = require('discord.js');
 
 const db = require('../utils/database.js');
@@ -41,7 +42,7 @@ module.exports = {
         if (bot.checkEnabled(channelID)) {
             return await interaction.reply({
                 embeds: [bot.checkEnabled(channelID)],
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         };
 
@@ -153,7 +154,7 @@ module.exports = {
         const reply = await interaction.reply({
             embeds: [embedView(embedFieldsObj, getCurrentPersona)],
             components: [addActionRow(selectPersonaMenu(getCurrentPersona)), addActionRow(newPersona, editPersona, deletePersona)],
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
 
         function updateReply(state, contentMessage, curPersona, isUpdateValid) {
@@ -403,7 +404,7 @@ module.exports = {
                         if (error.code === 'InteractionCollectorError') {
                             interaction.followUp({
                                 embeds: [embedFeedback.setTitle(`'${italic(modalType)}' ${italic('Modal has been timed out due to inactivity.\n')}`).setColor(colors.timeoutColor)],
-                                ephemeral: true
+                                flags: MessageFlags.Ephemeral
                             });
                         };
                         console.error(`ERROR (${modalId}): ${error}\n`);

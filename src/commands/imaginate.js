@@ -14,6 +14,7 @@ const {
     AttachmentBuilder,
     Collection,
     MessageManager,
+    MessageFlags,
     bold, italic, inlineCode} = require('discord.js');
 const wait = require('node:timers/promises').setTimeout;
 
@@ -141,7 +142,7 @@ module.exports = {
         if (bot.checkEnabled(channelID)) {
             return await interaction.reply({
                 embeds: [bot.checkEnabled(channelID)],
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         };
     
@@ -216,7 +217,7 @@ module.exports = {
                         properties = { embeds: [errorEmbed(null, `${italic(`I'm having some trouble with the OpenAI API. Try again in a moment.`)}`)], files: [], };
                         break;
                     case 'ephemeralError':
-                        properties = { embeds: [errorEmbed()], files: [], components: [], ephemeral: true, };
+                        properties = { embeds: [errorEmbed()], files: [], components: [], flags: MessageFlags.Ephemeral, };
                         break;
                     default:
                         properties = { embeds: [errorEmbed()], files: [], components: [], };

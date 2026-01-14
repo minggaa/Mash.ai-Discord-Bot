@@ -41,7 +41,7 @@ module.exports = {
 
         // Set desctiption for the embed message.
         const description = `You have used: ${bold(userData.tokensUsed)} tokens.
-                             Total usage cost: $${bold(userData.imageCosts)}`;
+                             Total usage cost: $${bold(userData.imageCosts || 0)}`;
         const disclaimer = `Disclaimer: Image generated does not count to tokens used but to costs directly.`;
 
         // Create an embed message to display the user's token balance.

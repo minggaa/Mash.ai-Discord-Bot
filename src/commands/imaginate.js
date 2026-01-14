@@ -23,7 +23,6 @@ const bot = require('../utils/bot.js');
 const colors = bot.colors;
 
 const config = require('../../botConfig.json');
-const { sampleData } = require('../../auxiliary/test.js');
 const emojis = config.commandEmojis;
 const models = config.GenerationModels;
 const imageModels = models.ImageModels;

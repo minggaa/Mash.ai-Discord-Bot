@@ -95,7 +95,7 @@ module.exports = {
 
                 const objRows = {
                     label: key,
-                    description: value,
+                    description: value.length > 100 ? value.substring(0, 97) + '...' : value,
                     value: key
                 };
 
@@ -201,7 +201,7 @@ module.exports = {
         // Retrieves the user selection.
         const collector = reply.createMessageComponentCollector({
             filter: (i) => i.user.id === interaction.user.id && (i.isButton() || i.isStringSelectMenu()),
-            idle: 60_000,
+            idle: 120_000,
         });
 
         // Listen for interaction that matches the collector's filter conditions.

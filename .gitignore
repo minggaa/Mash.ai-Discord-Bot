@@ -1,8 +1,10 @@
-_Sample
-node_modules
+# Local environment files
+.docs
+.sample
 .eslintrc.json
 .env
-mash.db
+node_modules
 auxiliary
+mash.db
 src/assets/variations/*
 src/log/images/*
